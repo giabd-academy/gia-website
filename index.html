@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Galaxy International Academy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b0b0b;
+  color: white;
+}
+
+/* NAVBAR */
+header {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  background: rgba(0,0,0,0.6);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-weight: bold;
+  color: red;
+  font-size: 20px;
+}
+
+.btn {
+  background: red;
+  padding: 10px 20px;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* HERO */
+.hero {
+  height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: url('https://images.unsplash.com/photo-1503899036084-c55cdd92da26') center/cover;
+  position: relative;
+  animation: zoom 10s infinite alternate;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  animation: fadeIn 2s ease-in;
+}
+
+h1 {
+  font-size: 45px;
+  margin-bottom: 10px;
+}
+
+/* SECTION */
+.section {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 12px;
+  width: 250px;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+  background: #2a2a2a;
+}
+
+/* WHATSAPP BUTTON */
+.whatsapp {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #25D366;
+  padding: 15px 20px;
+  border-radius: 50px;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* FORM */
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+  margin: auto;
+  gap: 10px;
+}
+
+input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 20px;
+  background: black;
+  color: gray;
+}
+
+/* ANIMATION */
+@keyframes fadeIn {
+  from {opacity:0; transform: translateY(30px);}
+  to {opacity:1; transform: translateY(0);}
+}
+
+@keyframes zoom {
+  from {transform: scale(1);}
+  to {transform: scale(1.1);}
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Galaxy International Academy</div>
+  <button class="btn">Apply Now</button>
+</header>
+
+<section class="hero">
+  <div class="overlay"></div>
+  <div class="hero-content">
+    <h1>Study in Japan 🇯🇵</h1>
+    <p>Build Your Future with GIABD</p>
+    <button class="btn">Start Journey</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Elite Services & Pathways</h2>
+  <div class="cards">
+
+    <div class="card">
+      <h3>Language Training</h3>
+      <p>N5 → N2 Full Roadmap</p>
+    </div>
+
+    <div class="card">
+      <h3>Visa Support</h3>
+      <p>Full Embassy Guidance</p>
+    </div>
+
+    <div class="card">
+      <h3>University Admission</h3>
+      <p>Japan Placement System</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>Apply Now</h2>
+  <form>
+    <input type="text" placeholder="Your Name">
+    <input type="text" placeholder="Phone Number">
+    <input type="text" placeholder="Interest (Study / Work)">
+    <button class="btn">Submit</button>
+  </form>
+</section>
+
+<footer>
+  Galaxy International Academy © 2026 | giabd.com
+</footer>
+
+<!-- WHATSAPP -->
+<a class="whatsapp" href="https://wa.me/880XXXXXXXXXX">
+  WhatsApp
+</a>
+
+</body>
+</html>
