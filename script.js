@@ -1,48 +1,35 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyIoP40SYo9fhHlrFPmyEgPEqyBclQRpV6vMzKZ6TIvud-nzydrAHprnuq8JLqfpTA6/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby.../exec";
 
 function submitLead(){
 
-  let name = document.getElementById("name").value;
-  let phone = document.getElementById("phone").value;
-  let interest = document.getElementById("interest").value;
-  let message = document.getElementById("message").value;
-
-  if(!name || !phone){
-    alert("Please fill required fields");
-    return;
-  }
-
   let data = {
-    name,
-    phone,
-    interest,
-    message
+    name: document.getElementById("name").value,
+    phone: document.getElementById("phone").value,
+    interest: document.getElementById("interest").value,
+    message: document.getElementById("message").value
   };
 
-  fetch(API_URL,{
-    method:"POST",
-    body:JSON.stringify(data),
-    headers:{
-      "Content-Type":"application/json"
-    }
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(data)
   })
-  .then(()=>{
+  .then(res => res.text())
+  .then(res => {
+    console.log(res);
+
+    alert("Submitted Successfully!");
 
     let msg = `GIABD Application 🇯🇵
-Name: ${name}
-Interest: ${interest}
-Phone: ${phone}`;
+Name: ${data.name}
+Phone: ${data.phone}
+Interest: ${data.interest}`;
 
     window.open(
       `https://wa.me/8801830150171?text=${encodeURIComponent(msg)}`
     );
-
-    alert("Submitted Successfully!");
-
-    document.getElementById("applyForm").reset();
-
   })
-  .catch(()=>{
+  .catch(err => {
+    console.log(err);
     alert("Error submitting form");
   });
 
