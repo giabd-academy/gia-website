@@ -30,6 +30,7 @@ header {
   font-size: 20px;
 }
 
+/* BUTTON STYLE */
 .btn {
   background: red;
   padding: 10px 20px;
@@ -37,6 +38,13 @@ header {
   color: white;
   border-radius: 8px;
   cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn:hover {
+  background: darkred;
+  transform: scale(1.05);
 }
 
 /* HERO */
@@ -94,7 +102,7 @@ h1 {
   background: #2a2a2a;
 }
 
-/* WHATSAPP BUTTON */
+/* WHATSAPP */
 .whatsapp {
   position: fixed;
   bottom: 20px;
@@ -116,18 +124,10 @@ form {
   gap: 10px;
 }
 
-input {
+input, textarea {
   padding: 10px;
   border-radius: 8px;
   border: none;
-}
-
-/* FOOTER */
-footer {
-  text-align: center;
-  padding: 20px;
-  background: black;
-  color: gray;
 }
 
 /* ANIMATION */
@@ -162,8 +162,8 @@ footer {
 
 <section class="section">
   <h2>Elite Services & Pathways</h2>
-  <div class="cards">
 
+  <div class="cards">
     <div class="card">
       <h3>Language Training</h3>
       <p>N5 → N2 Full Roadmap</p>
@@ -178,27 +178,24 @@ footer {
       <h3>University Admission</h3>
       <p>Japan Placement System</p>
     </div>
-
   </div>
 </section>
 
 <section class="section">
   <h2>Apply Now</h2>
+
   <form id="applyForm">
 
-<input type="text" id="name" placeholder="Your Name" required>
+    <input type="text" id="name" placeholder="Your Name" required>
+    <input type="text" id="phone" placeholder="Phone Number" required>
+    <input type="email" id="email" placeholder="Email">
+    <input type="text" id="course" placeholder="Course">
+    <textarea id="message" placeholder="Message"></textarea>
 
-<input type="text" id="phone" placeholder="Phone Number" required>
+    <!-- FIXED BUTTON -->
+    <button type="submit" class="btn">Apply Now</button>
 
-<input type="email" id="email" placeholder="Email">
-
-<input type="text" id="course" placeholder="Course">
-
-<textarea id="message" placeholder="Message"></textarea>
-
-<button type="submit">Apply Now</button>
-
-</form>
+  </form>
 
 <script>
 
@@ -212,47 +209,35 @@ fetch("https://script.google.com/macros/s/AKfycbzuSKXvu9TrpzlXJjPpX_-cWzkVQG2OFL
 method: "POST",
 
 body: JSON.stringify({
-
 name: document.getElementById("name").value,
-
 phone: document.getElementById("phone").value,
-
 email: document.getElementById("email").value,
-
 course: document.getElementById("course").value,
-
 message: document.getElementById("message").value
-
 })
 
 })
 
-.then(response => response.json())
-
+.then(res => res.json())
 .then(data => {
-
 alert("Application Submitted Successfully!");
-
 document.getElementById("applyForm").reset();
-
 })
 
 .catch(error => {
-
 alert("Error submitting form");
-
 });
 
 });
 
 </script>
+
 </section>
 
 <footer>
   Galaxy International Academy © 2026 | giabd.com
 </footer>
 
-<!-- WHATSAPP -->
 <a class="whatsapp" href="https://wa.me/880XXXXXXXXXX">
   WhatsApp
 </a>
