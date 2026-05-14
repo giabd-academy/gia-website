@@ -6,111 +6,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0b0b0b;
-  color: white;
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0b0b0b;
+  color:white;
 }
 
 /* HEADER */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background: rgba(0,0,0,0.6);
-  position: sticky;
-  top: 0;
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 20px;
+  background:rgba(0,0,0,0.6);
+  position:sticky;
+  top:0;
 }
 
-.logo img {
-  height: 45px;
+.logo img{
+  height:45px;
 }
 
 /* BUTTON */
-.btn {
-  background: red;
-  color: white;
-  padding: 10px 18px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
+.btn{
+  background:red;
+  color:white;
+  padding:10px 18px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  text-decoration:none;
 }
 
 /* HERO */
-.hero {
-  height: 90vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background: url('https://images.unsplash.com/photo-1503899036084-c55cdd92da26') center/cover;
-  position: relative;
+.hero{
+  height:90vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  background:url('https://images.unsplash.com/photo-1503899036084-c55cdd92da26') center/cover;
+  position:relative;
 }
 
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
+.overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.7);
 }
 
-.hero-content {
-  position: relative;
-  z-index: 2;
-}
-
-h1 {
-  font-size: 40px;
+.hero-content{
+  position:relative;
 }
 
 /* SECTION */
-.section {
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.cards {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.card {
-  background: #1a1a1a;
-  padding: 20px;
-  border-radius: 12px;
-  width: 250px;
+.section{
+  padding:60px 20px;
+  text-align:center;
 }
 
 /* FORM */
-form {
-  max-width: 400px;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+form{
+  max-width:400px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
 
-input, textarea {
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
+input,textarea{
+  padding:10px;
+  border:none;
+  border-radius:8px;
 }
 
 /* WHATSAPP */
-.whatsapp {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #25D366;
-  padding: 15px 20px;
-  border-radius: 50px;
-  color: white;
-  text-decoration: none;
+.whatsapp{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#25D366;
+  padding:15px 20px;
+  border-radius:50px;
+  color:white;
+  text-decoration:none;
 }
 </style>
 
@@ -120,7 +101,7 @@ input, textarea {
 
 <header>
   <div class="logo">
-    <img src="https://drive.google.com/uc?export=view&id=1I9LsRIpp2Mdbv3nY0PJQrHW2azD59k8l">
+    <img src="logo.jpeg" alt="Logo">
   </div>
 
   <a href="start.html" class="btn">Start Journey</a>
@@ -136,82 +117,27 @@ input, textarea {
 </section>
 
 <section class="section">
-  <h2>Elite Services</h2>
-
-  <div class="cards">
-    <div class="card">
-      <h3>Language Training</h3>
-      <p>N5 → N2 Full Roadmap</p>
-    </div>
-
-    <div class="card">
-      <h3>Visa Support</h3>
-      <p>Full Embassy Guidance</p>
-    </div>
-
-    <div class="card">
-      <h3>University Admission</h3>
-      <p>Japan Placement System</p>
-    </div>
-  </div>
-</section>
-
-<section class="section">
   <h2>Apply Now</h2>
 
   <form id="applyForm">
 
-    <input type="text" id="name" placeholder="Your Name" required>
-    <input type="text" id="phone" placeholder="Phone Number" required>
-    <input type="email" id="email" placeholder="Email">
-    <input type="text" id="course" placeholder="Course">
+    <input id="name" placeholder="Your Name" required>
+    <input id="phone" placeholder="Phone Number" required>
+    <input id="interest" placeholder="Interest">
     <textarea id="message" placeholder="Message"></textarea>
 
-    <button type="submit" class="btn">Apply Now</button>
+    <button type="button" class="btn" onclick="submitLead()">Apply Now</button>
 
   </form>
-
-<script>
-document.getElementById("applyForm")
-.addEventListener("submit", function(e){
-
-e.preventDefault();
-
-fetch("https://script.google.com/macros/s/AKfycbzuSKXvu9TrpzlXJjPpX_-cWzkVQG2OFLaF0UhfIFBorfyIllFktobDTqQqkoOROO4C_Q/exec", {
-
-method: "POST",
-
-body: JSON.stringify({
-name: document.getElementById("name").value,
-phone: document.getElementById("phone").value,
-email: document.getElementById("email").value,
-course: document.getElementById("course").value,
-message: document.getElementById("message").value
-})
-
-})
-
-.then(() => {
-alert("Application Submitted Successfully!");
-document.getElementById("applyForm").reset();
-})
-
-.catch(() => {
-alert("Error submitting form");
-});
-
-});
-</script>
-
 </section>
 
 <footer style="text-align:center;padding:20px;color:gray;">
 Galaxy International Academy © 2026
 </footer>
 
-<a class="whatsapp" href="https://wa.me/880XXXXXXXXXX">
-WhatsApp
-</a>
+<a class="whatsapp" href="https://wa.me/8801830150171">WhatsApp</a>
+
+<script src="script.js"></script>
 
 </body>
 </html>
