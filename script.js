@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzokWW957tA1GAhZ5e8rBSFJRa1FSYehoWAg8T96siL/dev";
+const API_URL = "https://script.google.com/macros/s/AKfycbx20JmAJIpkqiani_q-6ZY_TGA1weXhzv6yniB5BJp3INfhTYsPBmlvWDb7bRyele4DJw/exec";
 
 function submitLead(){
 
@@ -15,22 +15,32 @@ function submitLead(){
   })
   .then(res => res.text())
   .then(res => {
+
     console.log(res);
 
-    alert("Submitted Successfully!");
+    if(res === "SUCCESS"){
 
-    let msg = `GIABD Application 🇯🇵
+      alert("Submitted Successfully!");
+
+      let msg = `GIABD Application 🇯🇵
 Name: ${data.name}
 Phone: ${data.phone}
 Interest: ${data.interest}`;
 
-    window.open(
-      `https://wa.me/8801830150171?text=${encodeURIComponent(msg)}`
-    );
+      window.open(
+        `https://wa.me/8801830150171?text=${encodeURIComponent(msg)}`
+      );
+
+      document.getElementById("applyForm").reset();
+
+    } else {
+      alert("Server Error: " + res);
+    }
+
   })
   .catch(err => {
     console.log(err);
-    alert("Error submitting form");
+    alert("Network Error");
   });
 
 }
