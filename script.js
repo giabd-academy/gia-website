@@ -1,11 +1,11 @@
-
-const API_URL = "https://script.google.com/macros/s/AKfycbxTiAE72GuaykC2ZJeCQE7njhy8EbC1BHX8yWVrO75fGPg911n5hm1EIWW8WWkXYL2a/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyIoP40SYo9fhHlrFPmyEgPEqyBclQRpV6vMzKZ6TIvud-nzydrAHprnuq8JLqfpTA6/exec";
 
 function submitLead(){
 
   let name = document.getElementById("name").value;
   let phone = document.getElementById("phone").value;
   let interest = document.getElementById("interest").value;
+  let message = document.getElementById("message").value;
 
   if(!name || !phone){
     alert("Please fill required fields");
@@ -13,26 +13,37 @@ function submitLead(){
   }
 
   let data = {
-    name: name,
-    phone: phone,
-    interest: interest,
-    source: "GIABD GitHub Site"
+    name,
+    phone,
+    interest,
+    message
   };
 
-  fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify(data),
+    headers:{
+      "Content-Type":"application/json"
+    }
+  })
+  .then(()=>{
 
-  // WhatsApp funnel
-  let msg = `GIABD Application 🇯🇵
+    let msg = `GIABD Application 🇯🇵
 Name: ${name}
 Interest: ${interest}
 Phone: ${phone}`;
 
-  window.open(
-    `https://wa.me/8801830150171?text=${encodeURIComponent(msg)}`
-  );
+    window.open(
+      `https://wa.me/8801830150171?text=${encodeURIComponent(msg)}`
+    );
 
-  alert("Submitted Successfully!");
+    alert("Submitted Successfully!");
+
+    document.getElementById("applyForm").reset();
+
+  })
+  .catch(()=>{
+    alert("Error submitting form");
+  });
+
 }
