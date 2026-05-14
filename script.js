@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycby.../exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzokWW957tA1GAhZ5e8rBSFJRa1FSYehoWAg8T96siL/dev";
 
 function submitLead(){
 
