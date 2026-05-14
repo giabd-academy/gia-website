@@ -12,29 +12,83 @@ body{
   background:#0b0b0b;
   color:white;
   text-align:center;
-  padding:50px;
+  padding:40px;
 }
 
+h1{
+  color:red;
+}
+
+/* CARD DESIGN */
+.card-container{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  flex-wrap:wrap;
+  margin-top:40px;
+}
+
+.card{
+  background:#1a1a1a;
+  padding:25px;
+  border-radius:12px;
+  width:250px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.card:hover{
+  transform:scale(1.05);
+  background:#2a2a2a;
+}
+
+.disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+/* BUTTON */
 .btn{
   background:red;
   color:white;
   padding:12px 20px;
   border-radius:8px;
   text-decoration:none;
-  font-weight:bold;
   display:inline-block;
-  margin-top:20px;
+  margin-top:15px;
 }
 </style>
+
 </head>
 
 <body>
 
-<h1 style="color:red;">Start Your Journey 🇯🇵</h1>
+<h1>Choose Your Visa Path 🇯🇵</h1>
+<p>Select your option to continue</p>
 
-<p>Welcome to Galaxy International Academy</p>
+<div class="card-container">
 
-<a class="btn" href="index.html">Back to Home</a>
+  <!-- STUDENT VISA -->
+  <div class="card" onclick="goStudent()">
+    <h2>Student Visa 🎓</h2>
+    <p>Study in Japan with full support</p>
+    <a class="btn">Continue</a>
+  </div>
+
+  <!-- WORKING VISA -->
+  <div class="card disabled">
+    <h2>Working Visa 💼</h2>
+    <p>Coming Soon</p>
+    <a class="btn" style="background:gray;">Coming Soon</a>
+  </div>
+
+</div>
+
+<script>
+function goStudent(){
+  window.location.href = "student.html";
+}
+</script>
 
 </body>
 </html>
