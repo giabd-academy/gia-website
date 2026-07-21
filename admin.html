@@ -163,7 +163,12 @@ tr:hover td{background:var(--cream)}
   .section{display:none!important}
   .section.printme{display:block!important}
   body{background:#fff}
+  @page{size:A4;margin:14mm}
+  .receiptPaper,.reportPaper{box-shadow:none!important;border:none!important;max-width:100%!important;padding:0!important}
 }
+.receiptPaper,.reportPaper{position:relative;overflow:hidden}
+.paperWatermark{position:absolute;top:50%;left:50%;width:70%;padding-bottom:70%;transform:translate(-50%,-50%);background-size:contain;background-position:center;background-repeat:no-repeat;opacity:.05;pointer-events:none;z-index:0}
+.receiptPaper > *:not(.paperWatermark),.reportPaper > *:not(.paperWatermark){position:relative;z-index:1}
 
 /* ---- Login screen: scenic Japan-inspired backdrop + glassmorphism (placed last to win cascade) ---- */
 #loginOverlay,#forcePasswordOverlay{position:fixed;inset:0;background:linear-gradient(180deg,#0d0b22 0%,#2a2350 35%,#5c3a5e 55%,#c96a4e 78%,#e8a154 100%);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999;overflow:hidden}
@@ -344,6 +349,7 @@ tr:hover td{background:var(--cream)}
       <!-- DASHBOARD -->
       <section class="section" id="sec-dashboard">
         <div class="panelTitle"><h2 id="h2-dashboard">Dashboard</h2><span class="s">A quick overview of the overall status</span></div>
+        <div id="backupReminderBanner"></div>
         <div class="cards" id="dashCards"></div>
         <div class="formCard">
           <h3 style="margin-bottom:10px">Collection Trend — Last 6 Months</h3>
@@ -381,9 +387,11 @@ tr:hover td{background:var(--cream)}
         <div class="panelTitle"><h2 id="h2-students">Student List</h2>
           <div style="display:flex;gap:8px">
             <label class="btn ghost small" style="margin:0">⬆ Import CSV<input type="file" id="csvImportFile" accept=".csv" style="display:none" onchange="importStudentsCSV(event)"></label>
+            <button class="btn small" style="background:#25D366" onclick="openBulkReminderPanel()">📱 Bulk Reminders</button>
             <button class="btn sakura" onclick="openStudentForm()">+ New Student</button>
           </div>
         </div>
+        <div id="bulkReminderWrap"></div>
         <div class="note no-print" style="margin-bottom:10px">CSV columns expected (first row = header): <b>name, phone, course, batch, totalFee</b> — extra columns are ignored.</div>
         <div class="toolbar no-print">
           <input id="stuSearch" placeholder="Search by name/phone/ID" oninput="renderStudents()">
@@ -395,7 +403,7 @@ tr:hover td{background:var(--cream)}
         <div id="studentFormWrap"></div>
         <div class="tablewrap">
           <table>
-            <thead><tr><th>ID</th><th>Photo</th><th>Name</th><th>Phone</th><th>Course/Batch</th><th>Total Fee</th><th>Paid</th><th>Due</th><th>Follow-up</th><th class="no-print">Action</th></tr></thead>
+            <thead><tr><th>ID</th><th>Photo</th><th>Name</th><th>Phone</th><th>Course/Batch</th><th>Total Fee</th><th>Paid</th><th>Due</th><th>Follow-up</th><th>Docs</th><th class="no-print">Action</th></tr></thead>
             <tbody id="studentsBody"></tbody>
           </table>
         </div>
@@ -413,8 +421,14 @@ tr:hover td{background:var(--cream)}
 
       <!-- SCHOOLS -->
       <section class="section" id="sec-schools">
-        <div class="panelTitle"><h2 id="h2-schools">Partner Schools (Japan)</h2><button class="btn sakura" onclick="openSchoolForm()">+ New School</button></div>
+        <div class="panelTitle"><h2 id="h2-schools">Partner Schools (Japan)</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn ghost" onclick="toggleSchoolComparison()">⇄ Compare Schools</button>
+            <button class="btn sakura" onclick="openSchoolForm()">+ New School</button>
+          </div>
+        </div>
         <div id="schoolFormWrap"></div>
+        <div id="schoolCompareWrap"></div>
         <div class="tablewrap">
           <table><thead><tr><th>School Name</th><th>City/Prefecture</th><th>Programs</th><th>Intake Months</th><th>Tuition Range</th><th>Contact</th><th>Status</th><th class="no-print">Action</th></tr></thead><tbody id="schoolsBody"></tbody></table>
         </div>
@@ -481,27 +495,65 @@ tr:hover td{background:var(--cream)}
       <!-- EXPENSES -->
       <section class="section" id="sec-expenses">
         <div class="panelTitle"><h2 id="h2-expenses">Expenses / Cashbook</h2></div>
+        <div class="cards" id="expenseCards"></div>
         <div class="formCard">
+          <h3 id="expenseFormTitle">Add Expense</h3>
+          <input type="hidden" id="ex_editing_id" value="">
           <div class="grid4">
             <div class="field"><label>Date</label><input type="date" id="ex_date"></div>
-            <div class="field"><label>Category</label><select id="ex_cat"><option>Rent</option><option>Salary</option><option>Utilities</option><option>Marketing</option><option>Study Materials</option><option>Miscellaneous</option></select></div>
+            <div class="field"><label>Category</label><select id="ex_cat"><option>Rent</option><option>Salary</option><option>Utilities</option><option>Marketing</option><option>Study Materials</option><option>Miscellaneous</option><option>Others</option></select></div>
             <div class="field"><label>Amount (৳)</label><input type="number" id="ex_amount"></div>
             <div class="field"><label>Notes</label><input id="ex_note"></div>
           </div>
-          <button class="btn" onclick="addExpense()">Add Expense</button>
+          <div class="field">
+            <label>Receipt / Voucher (optional)</label>
+            <input type="file" id="ex_receipt_file" accept="image/*,application/pdf" style="display:none" onchange="uploadExpenseReceipt(this)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button type="button" class="btn ghost small" onclick="document.getElementById('ex_receipt_file').click()">Upload Receipt</button>
+              <span id="ex_receipt_status" style="font-size:.78rem;color:var(--muted)">No file attached</span>
+            </div>
+          </div>
+          <div class="actionsRow">
+            <button class="btn" id="ex_save_btn" onclick="saveExpense()">Add Expense</button>
+            <button class="btn ghost hidden" id="ex_cancel_btn" onclick="cancelExpenseEdit()">Cancel Edit</button>
+          </div>
+        </div>
+        <div class="toolbar no-print">
+          <select id="ex_filterMonth" onchange="renderExpenses()"></select>
         </div>
         <div class="tablewrap">
           <table><thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Notes</th><th class="no-print">Action</th></tr></thead><tbody id="expensesBody"></tbody></table>
         </div>
       </section>
 
+      <!-- DEADLINES -->
+      <section class="section" id="sec-deadlines">
+        <div class="panelTitle"><h2 id="h2-deadlines">Upcoming Deadlines</h2><span class="s">Installment due dates and visa interview dates, all in one place</span></div>
+        <div class="toolbar no-print">
+          <select id="dl_range" onchange="renderDeadlines()">
+            <option value="7">Next 7 Days</option>
+            <option value="14">Next 14 Days</option>
+            <option value="30" selected>Next 30 Days</option>
+            <option value="90">Next 90 Days</option>
+            <option value="ALL">All Upcoming</option>
+          </select>
+        </div>
+        <div class="tablewrap">
+          <table><thead><tr><th>Date</th><th>Type</th><th>Student</th><th>Detail</th><th>Status</th></tr></thead><tbody id="deadlinesBody"></tbody></table>
+        </div>
+      </section>
+
       <!-- REPORTS -->
       <section class="section" id="sec-reports">
         <div class="panelTitle"><h2 id="h2-reports">Reports</h2><span class="s">Monthly collection, expenses and batch-wise summary</span></div>
+        <div class="toolbar no-print">
+          <label style="font-size:.8rem;color:var(--muted);font-weight:600;align-self:center">Month:</label>
+          <input type="month" id="rep_month" onchange="renderReports()">
+        </div>
         <div class="cards" id="reportCards"></div>
         <div class="toolbar no-print">
           <select id="rep_batch" onchange="renderBatchReport()"><option value="">Select a batch</option></select>
-          <button class="btn ghost small" onclick="window.print()">🖨 Print This Report</button>
+          <button class="btn gold small" onclick="printMonthlyReport()">🖨 Generate Printable Report (PDF)</button>
           <button class="btn ghost small" onclick="exportStudentsCSV()">⬇ Export Students CSV</button>
         </div>
         <div class="tablewrap">
@@ -514,6 +566,15 @@ tr:hover td{background:var(--cream)}
         </div>
         <div class="tablewrap">
           <table><thead><tr><th>Student</th><th>Present</th><th>Absent</th><th>Late</th><th>Total Sessions</th><th>Attendance %</th></tr></thead><tbody id="attReportBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- MONTHLY REPORT PRINT VIEW -->
+      <section class="section printme" id="sec-monthlyreport">
+        <div class="reportPaper" id="monthlyReportPaperBox"></div>
+        <div style="text-align:center;margin-top:14px" class="no-print">
+          <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+          <button class="btn ghost" onclick="show('reports')">← Back</button>
         </div>
       </section>
 
@@ -548,6 +609,12 @@ tr:hover td{background:var(--cream)}
             <div class="field"><label>Password</label><input id="nu_pass"></div>
           </div>
           <button class="btn ghost" onclick="addStaffUser()">+ Add Staff</button>
+        </div>
+        <div class="formCard admin-only">
+          <h3>Staff Performance</h3>
+          <div class="tablewrap">
+            <table><thead><tr><th>Staff</th><th>Leads Added</th><th>Leads Converted</th><th>Students Added</th></tr></thead><tbody id="staffPerformanceBody"></tbody></table>
+          </div>
         </div>
         <div class="formCard admin-only">
           <h3>Activity Log</h3>
@@ -819,6 +886,7 @@ const NAV=[
   {id:"documents",en:"Documents",bn:"ডকুমেন্ট"},
   {id:"attendance",en:"Attendance",bn:"উপস্থিতি"},
   {id:"expenses",en:"Expenses",bn:"খরচ"},
+  {id:"deadlines",en:"Deadlines",bn:"ডেডলাইন"},
   {id:"reports",en:"Reports",bn:"রিপোর্ট"},
   {id:"settings",en:"Settings",bn:"সেটিংস"}
 ];
@@ -844,6 +912,7 @@ const H2_I18N = {
   "h2-expenses":{en:"Expenses / Cashbook", bn:"খরচ / ক্যাশবুক"},
   "h2-reports":{en:"Reports", bn:"রিপোর্ট"},
   "h2-attreport":{en:"Batch Attendance %", bn:"ব্যাচ উপস্থিতি %"},
+  "h2-deadlines":{en:"Upcoming Deadlines", bn:"আসন্ন ডেডলাইন"},
   "h2-settings":{en:"Settings", bn:"সেটিংস"},
 };
 function toggleLang(){
@@ -878,6 +947,7 @@ function show(id){
   if(id==="documents")renderDocuments();
   if(id==="attendance")renderAttendanceTab();
   if(id==="expenses")renderExpenses();
+  if(id==="deadlines")renderDeadlines();
   if(id==="reports")renderReports();
   if(id==="settings")renderSettings();
 }
@@ -903,6 +973,17 @@ function renderDashboard(){
   const now=new Date();
   const collectedThisMonth=s.reduce((a,x)=>a+(x.payments||[]).filter(p=>{const d=new Date(p.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).reduce((b,p)=>b+Number(p.amount||0),0),0);
   const activeBatches=db.classes.filter(c=>c.status!=="Completed").length;
+
+  const banner=document.getElementById("backupReminderBanner");
+  const daysSinceBackup = db.lastBackupDate ? Math.floor((now - new Date(db.lastBackupDate)) / (1000*60*60*24)) : null;
+  if(daysSinceBackup===null || daysSinceBackup>=7){
+    banner.innerHTML = `<div class="formCard" style="background:var(--warn-soft);border:1px solid var(--warn);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <span style="color:#7a5a08;font-size:.85rem">⚠ ${daysSinceBackup===null? "You haven't taken a backup yet." : "It has been "+daysSinceBackup+" days since your last backup."} Regular backups protect your data.</span>
+      <button class="btn small" style="background:var(--warn)" onclick="exportBackup()">⬇ Backup Now</button>
+    </div>`;
+  } else {
+    banner.innerHTML="";
+  }
 
   document.getElementById("dashCards").innerHTML=`
     <div class="card accent"><h3>Total Students</h3><div class="num">${totalStudents}</div></div>
@@ -1030,7 +1111,7 @@ async function saveLead(id){
   const data={name:v("ld_name").trim(),phone:v("ld_phone").trim(),course:v("ld_course").trim(),source:v("ld_source").trim(),status:v("ld_status"),followDate:v("ld_follow"),note:v("ld_note").trim()};
   if(!data.name){alert("Name is required");return;}
   if(id){Object.assign(db.leads.find(x=>x.id===id),data); logActivity("Lead Updated: "+data.name);}
-  else{db.leads.push({id:"ld"+Date.now(),...data}); logActivity("New lead added: "+data.name);}
+  else{db.leads.push({id:"ld"+Date.now(),addedBy:session.name,...data}); logActivity("New lead added: "+data.name);}
   await saveData();
   document.getElementById("leadFormWrap").innerHTML="";
   renderLeads();
@@ -1043,6 +1124,7 @@ async function deleteLead(id){
 function convertLead(id){
   const l=db.leads.find(x=>x.id===id);
   l.status="Converted";
+  l.convertedBy=session.name;
   saveData();
   show("students");
   openStudentForm();
@@ -1078,6 +1160,7 @@ function renderStudents(){
       <td>${s.name}</td><td>${s.phone||"—"}</td><td>${s.course||"—"} / ${s.batch||"—"}</td>
       <td>${fmt(s.totalFee)}</td><td>${fmt(studentPaid(s))}</td><td>${fmt(studentDue(s))}</td>
       <td><span class="badge ${badgeClass(s.follow)}">${s.follow||"—"}</span></td>
+      <td><a href="#" onclick="show('documents');setTimeout(()=>{document.getElementById('doc_student').value='${s.id}';renderDocChecklist();},50);return false;" style="text-decoration:none;font-size:.78rem;font-weight:700;color:var(--navy)">${docCountCollected(s)}/${DOC_TYPES.length}</a></td>
       <td class="no-print">
         <button class="btn ghost small" onclick="openStudentForm('${s.id}')">Edit</button>
         <button class="btn small gold" onclick="showAdmissionSlip('${s.id}')">PDF</button>
@@ -1085,7 +1168,7 @@ function renderStudents(){
         ${studentDue(s)>0 ? `<button class="btn small" style="background:#25D366" onclick="whatsappReminder('${s.id}')">WhatsApp</button>` : ""}
         ${session.role==="Admin" ? `<button class="btn small danger" onclick="deleteStudent('${s.id}')">Del</button>` : ""}
       </td>
-    </tr>`).join("") || `<tr><td colspan="10">No students yet — click "Add New Student"</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="11">No students yet — click "Add New Student"</td></tr>`;
   list.forEach(s=>{ if(s.photoKey) loadAvatarThumb(s.id, s.photoKey); });
 }
 async function loadAvatarThumb(sid, photoKey){
@@ -1113,6 +1196,7 @@ function openStudentForm(id){
         <div class="field"><label>Enrollment Date</label><input type="date" id="f_enrollDate" value="${s?s.enrollDate||'':''}"></div>
         <div class="field"><label>JLPT/JFT Status</label><select id="f_jlpt">${["Not Started","In Progress","Passed","Failed - Retake"].map(o=>`<option ${s&&s.jlpt===o?"selected":""}>${o}</option>`).join("")}</select></div>
         <div class="field"><label>Visa Status</label><select id="f_visa">${["Not Started","Preparing Docs","Submitted","Approved","Rejected"].map(o=>`<option ${s&&s.visa===o?"selected":""}>${o}</option>`).join("")}</select></div>
+        <div class="field"><label>Visa Interview / Deadline Date (optional)</label><input type="date" id="f_visaDate" value="${s?s.visaInterviewDate||'':''}"></div>
         <div class="field"><label>Application Status</label><select id="f_app">${["Not Started","In Progress","Submitted","Accepted","Rejected"].map(o=>`<option ${s&&s.app===o?"selected":""}>${o}</option>`).join("")}</select></div>
         <div class="field"><label>Documents Status</label><select id="f_docs">${["Pending","Collecting","Complete","Issue - Follow Up"].map(o=>`<option ${s&&s.docs===o?"selected":""}>${o}</option>`).join("")}</select></div>
         <div class="field"><label>Partner School (Study pathway, optional)</label><select id="f_school"><option value="">— None —</option>${db.schools.map(sc=>`<option value="${sc.id}" ${s&&s.schoolId===sc.id?"selected":""}>${sc.name}</option>`).join("")}</select></div>
@@ -1179,7 +1263,7 @@ async function saveStudent(id){
     name:val("f_name").trim(), phone:val("f_phone").trim(), passport:val("f_passport").trim(),
     course:val("f_course").trim(), batch:val("f_batch").trim(), level:val("f_level").trim(),
     source:val("f_source").trim(), totalFee:Number(val("f_totalFee"))||0, enrollDate:val("f_enrollDate"),
-    jlpt:val("f_jlpt"), visa:val("f_visa"), app:val("f_app"), docs:val("f_docs"), follow:val("f_follow"),
+    jlpt:val("f_jlpt"), visa:val("f_visa"), visaInterviewDate:val("f_visaDate"), app:val("f_app"), docs:val("f_docs"), follow:val("f_follow"),
     notes:val("f_notes").trim(), schoolId: val("f_school")||null
   };
   if(!data.name){alert("Name is required");return;}
@@ -1195,7 +1279,7 @@ async function saveStudent(id){
     newId="s"+Date.now();
     const photoKey = window._pendingPhotoKey || null;
     window._pendingPhotoKey = null;
-    targetStudent={id:newId, sid, payments:[], documents:{}, installments:[], photoKey, ...data};
+    targetStudent={id:newId, sid, payments:[], documents:{}, installments:[], photoKey, addedBy:session.name, ...data};
     db.students.push(targetStudent);
     logActivity("New student added: "+data.name+" ("+sid+")");
   }
@@ -1228,6 +1312,27 @@ function whatsappReminder(sid){
   const msg = `Dear ${s.name}, this is a reminder from ${db.agency.name} regarding your course fee. Current balance due: ${fmt(studentDue(s))}. Please contact us to settle this at your earliest convenience. Thank you.`;
   window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg), "_blank");
   logActivity("WhatsApp reminder sent: "+s.name);
+}
+function openBulkReminderPanel(){
+  const dueList=db.students.filter(s=>studentDue(s)>0);
+  const wrap=document.getElementById("bulkReminderWrap");
+  if(!dueList.length){
+    wrap.innerHTML = `<div class="formCard"><div class="note">No students currently have an outstanding due.</div></div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="formCard">
+      <h3>Students With Outstanding Dues (${dueList.length})</h3>
+      <div class="note">Browsers block sending multiple WhatsApp messages automatically — click each button below one at a time; a WhatsApp tab will open pre-filled with the reminder message.</div>
+      <div class="tablewrap" style="margin-top:10px">
+        <table><thead><tr><th>Name</th><th>Phone</th><th>Due</th><th>Action</th></tr></thead>
+        <tbody>
+          ${dueList.map(s=>`<tr><td>${s.name}</td><td>${s.phone||"—"}</td><td>${fmt(studentDue(s))}</td>
+            <td>${s.phone ? `<button class="btn small" style="background:#25D366" onclick="whatsappReminder('${s.id}')">Send WhatsApp</button>` : `<span style="color:var(--muted);font-size:.76rem">No phone</span>`}</td></tr>`).join("")}
+        </tbody></table>
+      </div>
+      <div class="actionsRow"><button class="btn ghost" onclick="document.getElementById('bulkReminderWrap').innerHTML=''">Close</button></div>
+    </div>`;
 }
 
 /* ---------------- CLASSES / BATCHES ---------------- */
@@ -1300,6 +1405,32 @@ function renderSchools(){
     </tr>`;
   }).join("") || `<tr><td colspan="8">No partner schools added yet</td></tr>`;
 }
+function toggleSchoolComparison(){
+  const wrap=document.getElementById("schoolCompareWrap");
+  if(wrap.innerHTML.trim()){ wrap.innerHTML=""; return; }
+  if(!db.schools.length){ wrap.innerHTML=`<div class="formCard"><div class="note">No partner schools added yet to compare.</div></div>`; return; }
+  const rows=[
+    {label:"City / Prefecture", key:"city"},
+    {label:"Programs Offered", key:"programs"},
+    {label:"Intake Months", key:"intake"},
+    {label:"Tuition Range", key:"tuition"},
+    {label:"Duration", key:"duration"},
+    {label:"Partnership Status", key:"status"},
+    {label:"Contact", key:"contactName"},
+    {label:"Phone", key:"phone"},
+  ];
+  wrap.innerHTML = `
+    <div class="formCard" style="overflow-x:auto">
+      <h3>Side-by-Side School Comparison</h3>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid var(--navy)">Attribute</th>${db.schools.map(sc=>`<th style="text-align:left;padding:8px;border-bottom:2px solid var(--navy);white-space:nowrap">${sc.name}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr><td style="padding:8px;font-weight:600;border-bottom:1px solid var(--line)">${r.label}</td>${db.schools.map(sc=>`<td style="padding:8px;border-bottom:1px solid var(--line)">${sc[r.key]||"—"}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+      <div class="actionsRow"><button class="btn ghost" onclick="toggleSchoolComparison()">Close Comparison</button></div>
+    </div>`;
+}
 function openSchoolForm(id){
   const sc=id?db.schools.find(x=>x.id===id):null;
   document.getElementById("schoolFormWrap").innerHTML=`
@@ -1307,7 +1438,19 @@ function openSchoolForm(id){
       <h3>${sc?"Edit School":"New Partner School"}</h3>
       <div class="grid3">
         <div class="field"><label>School Name</label><input id="sch_name" value="${sc?sc.name:''}"></div>
-        <div class="field"><label>City / Prefecture</label><input id="sch_city" value="${sc?sc.city||'':''}" placeholder="e.g. Tokyo, Osaka"></div>
+        <div class="field"><label>City / Prefecture</label><input id="sch_city" list="prefectureList" value="${sc?sc.city||'':''}" placeholder="e.g. Tokyo, Osaka"></div>
+        <datalist id="prefectureList">
+          <option value="Hokkaido"><option value="Aomori"><option value="Iwate"><option value="Miyagi"><option value="Akita">
+          <option value="Yamagata"><option value="Fukushima"><option value="Ibaraki"><option value="Tochigi"><option value="Gunma">
+          <option value="Saitama"><option value="Chiba"><option value="Tokyo"><option value="Kanagawa"><option value="Niigata">
+          <option value="Toyama"><option value="Ishikawa"><option value="Fukui"><option value="Yamanashi"><option value="Nagano">
+          <option value="Gifu"><option value="Shizuoka"><option value="Aichi"><option value="Mie"><option value="Shiga">
+          <option value="Kyoto"><option value="Osaka"><option value="Hyogo"><option value="Nara"><option value="Wakayama">
+          <option value="Tottori"><option value="Shimane"><option value="Okayama"><option value="Hiroshima"><option value="Yamaguchi">
+          <option value="Tokushima"><option value="Kagawa"><option value="Ehime"><option value="Kochi"><option value="Fukuoka">
+          <option value="Saga"><option value="Nagasaki"><option value="Kumamoto"><option value="Oita"><option value="Miyazaki">
+          <option value="Kagoshima"><option value="Okinawa">
+        </datalist>
         <div class="field"><label>Programs Offered</label><input id="sch_programs" value="${sc?sc.programs||'':''}" placeholder="e.g. General Japanese, JLPT prep"></div>
         <div class="field"><label>Intake Months</label><input id="sch_intake" value="${sc?sc.intake||'':''}" placeholder="e.g. April, October"></div>
         <div class="field"><label>Tuition Range (per year)</label><input id="sch_tuition" value="${sc?sc.tuition||'':''}" placeholder="e.g. ¥700,000–900,000"></div>
@@ -1431,6 +1574,7 @@ function showReceipt(studentId, paymentId){
   const p=(s.payments||[]).find(x=>x.id===paymentId);
   const a=db.agency;
   document.getElementById("receiptPaperBox").innerHTML=`
+    <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
     <div class="rhead">
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${LOGO_DATA}" style="width:58px;height:58px;object-fit:contain;flex-shrink:0">
@@ -1460,6 +1604,7 @@ function showAdmissionSlip(studentId){
   const s=db.students.find(x=>x.id===studentId);
   const a=db.agency;
   document.getElementById("admissionPaperBox").innerHTML=`
+    <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
     <div class="rhead">
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${LOGO_DATA}" style="width:58px;height:58px;object-fit:contain;flex-shrink:0">
@@ -1519,6 +1664,7 @@ function printBatchRoster(batchName){
   const list=db.students.filter(s=>s.batch===batchName);
   const a=db.agency;
   document.getElementById("rosterPaperBox").innerHTML = `
+    <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
     <div class="rhead">
       <div style="display:flex;align-items:center;gap:12px">
         <img src="${LOGO_DATA}" style="width:50px;height:50px;object-fit:contain">
@@ -1585,6 +1731,9 @@ function docEntry(s, dt){
   if(!d) return {copyStatus:"Not Collected", originalStatus:"Not Collected"};
   if(typeof d === "string") return {copyStatus: d==="Pending"?"Not Collected":"Copy Collected", originalStatus:"Not Collected"};
   return {copyStatus:d.copyStatus||"Not Collected", originalStatus:d.originalStatus||"Not Collected", fileName:d.fileName, fileKey:d.fileKey};
+}
+function docCountCollected(s){
+  return DOC_TYPES.filter(dt=>docEntry(s,dt).copyStatus==="Copy Collected").length;
 }
 function renderDocChecklist(){
   const sid=document.getElementById("doc_student").value;
@@ -1708,24 +1857,127 @@ async function saveAttendance(){
 }
 
 /* ---------------- EXPENSES ---------------- */
+function expenseMonthKey(dateStr){ return dateStr ? dateStr.slice(0,7) : ""; }
 function renderExpenses(){
   if(!document.getElementById("ex_date").value)document.getElementById("ex_date").value=new Date().toISOString().slice(0,10);
-  const sorted=[...db.expenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  // Build the month filter dropdown from months that actually have expenses, plus current month
+  const monthsSet = new Set(db.expenses.map(e=>expenseMonthKey(e.date)).filter(Boolean));
+  monthsSet.add(new Date().toISOString().slice(0,7));
+  const months = [...monthsSet].sort().reverse();
+  const monthSel = document.getElementById("ex_filterMonth");
+  const curSel = monthSel.value || "ALL";
+  monthSel.innerHTML = `<option value="ALL">All Time</option>` + months.map(m=>{
+    const d=new Date(m+"-01");
+    const label=d.toLocaleString('en',{month:'long',year:'numeric'});
+    return `<option value="${m}" ${m===curSel?"selected":""}>${label}</option>`;
+  }).join("");
+  if(curSel!=="ALL" && !months.includes(curSel)) monthSel.value="ALL";
+
+  const filterMonth = monthSel.value;
+  const filtered = filterMonth==="ALL" ? db.expenses : db.expenses.filter(e=>expenseMonthKey(e.date)===filterMonth);
+  const sorted=[...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  const totalShown = filtered.reduce((a,e)=>a+Number(e.amount||0),0);
+  const allTimeTotal = db.expenses.reduce((a,e)=>a+Number(e.amount||0),0);
+  const thisMonthKey = new Date().toISOString().slice(0,7);
+  const thisMonthTotal = db.expenses.filter(e=>expenseMonthKey(e.date)===thisMonthKey).reduce((a,e)=>a+Number(e.amount||0),0);
+  document.getElementById("expenseCards").innerHTML = `
+    <div class="card accent"><h3>${filterMonth==="ALL"?"Total (All Time)":"Total (Selected Month)"}</h3><div class="num">${fmt(totalShown)}</div></div>
+    <div class="card"><h3>This Month So Far</h3><div class="num">${fmt(thisMonthTotal)}</div></div>
+    <div class="card gold"><h3>All-Time Total</h3><div class="num">${fmt(allTimeTotal)}</div></div>
+  `;
+
   document.getElementById("expensesBody").innerHTML = sorted.map(e=>`
     <tr><td>${e.date}</td><td>${e.cat}</td><td>${fmt(e.amount)}</td><td>${e.note||"—"}</td>
-    <td class="no-print"><button class="btn small danger" onclick="deleteExpense('${e.id}')">Del</button></td></tr>
-  `).join("")||`<tr><td colspan="5">No expenses recorded yet</td></tr>`;
+    <td class="no-print">
+      <button class="btn ghost small" onclick="openExpenseForEdit('${e.id}')">Edit</button>
+      ${e.receiptKey ? `<button class="btn small gold" onclick="viewExpenseReceipt('${e.receiptKey}')">Receipt</button>` : ""}
+      <button class="btn small danger" onclick="deleteExpense('${e.id}')">Del</button>
+    </td></tr>
+  `).join("")||`<tr><td colspan="5">No expenses recorded${filterMonth!=="ALL"?" for this month":" yet"}</td></tr>`;
 }
-async function addExpense(){
+function openExpenseForEdit(id){
+  const e=db.expenses.find(x=>x.id===id);
+  if(!e)return;
+  document.getElementById("ex_editing_id").value=id;
+  document.getElementById("ex_date").value=e.date;
+  document.getElementById("ex_cat").value=e.cat;
+  document.getElementById("ex_amount").value=e.amount;
+  document.getElementById("ex_note").value=e.note||"";
+  document.getElementById("ex_receipt_status").textContent = e.receiptKey ? "Receipt attached ✓" : "No file attached";
+  document.getElementById("expenseFormTitle").textContent="Edit Expense";
+  document.getElementById("ex_save_btn").textContent="Save Changes";
+  document.getElementById("ex_cancel_btn").classList.remove("hidden");
+  document.getElementById("ex_date").scrollIntoView({behavior:"smooth", block:"center"});
+}
+function cancelExpenseEdit(){
+  document.getElementById("ex_editing_id").value="";
+  document.getElementById("ex_date").value=new Date().toISOString().slice(0,10);
+  document.getElementById("ex_cat").value="Rent";
+  document.getElementById("ex_amount").value="";
+  document.getElementById("ex_note").value="";
+  document.getElementById("ex_receipt_status").textContent="No file attached";
+  window._pendingReceiptKey=null;
+  document.getElementById("expenseFormTitle").textContent="Add Expense";
+  document.getElementById("ex_save_btn").textContent="Add Expense";
+  document.getElementById("ex_cancel_btn").classList.add("hidden");
+}
+async function uploadExpenseReceipt(inputEl){
+  const file=inputEl.files[0];
+  if(!file)return;
+  if(file.size > 3.5*1024*1024){alert("File is too large — max 3.5 MB allowed");inputEl.value="";return;}
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const editingId=document.getElementById("ex_editing_id").value;
+    const key = "expfile_"+(editingId||("pending"+Date.now()));
+    try{
+      await storageAdapter.set(key, JSON.stringify({name:file.name, type:file.type, data:e.target.result}), true);
+      if(editingId){
+        const exp=db.expenses.find(x=>x.id===editingId);
+        exp.receiptKey=key;
+        await saveData();
+      }else{
+        window._pendingReceiptKey=key;
+      }
+      document.getElementById("ex_receipt_status").textContent="Receipt attached ✓";
+    }catch(err){ alert("Upload failed, please try again."); }
+  };
+  reader.readAsDataURL(file);
+}
+async function viewExpenseReceipt(key){
+  try{
+    const res=await storageAdapter.get(key, true);
+    const parsed=JSON.parse(res.value);
+    const w=window.open();
+    if(!w){alert("Pop-up blocked — please allow pop-ups in your browser settings");return;}
+    if(parsed.type && parsed.type.startsWith("image/")){
+      w.document.write('<title>'+parsed.name+'</title><body style="margin:0;background:#222;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="'+parsed.data+'" style="max-width:100%;max-height:100vh"></body>');
+    }else{
+      w.location.href=parsed.data;
+    }
+  }catch(err){ alert("File not found."); }
+}
+async function saveExpense(){
+  const editingId=document.getElementById("ex_editing_id").value;
   const date=document.getElementById("ex_date").value;
   const cat=document.getElementById("ex_cat").value;
   const amount=Number(document.getElementById("ex_amount").value);
   const note=document.getElementById("ex_note").value.trim();
   if(!amount||amount<=0){alert("Enter a valid amount");return;}
-  db.expenses.push({id:"e"+Date.now(),date,cat,amount,note});
-  logActivity("Expense added: "+cat+" — "+fmt(amount));
+  if(editingId){
+    const e=db.expenses.find(x=>x.id===editingId);
+    Object.assign(e,{date,cat,amount,note});
+    logActivity("Expense edited: "+cat+" — "+fmt(amount));
+  }else{
+    const receiptKey = window._pendingReceiptKey || null;
+    window._pendingReceiptKey = null;
+    db.expenses.push({id:"e"+Date.now(),date,cat,amount,note,receiptKey});
+    logActivity("Expense added: "+cat+" — "+fmt(amount));
+  }
+
   await saveData();
-  document.getElementById("ex_amount").value=""; document.getElementById("ex_note").value="";
+  cancelExpenseEdit();
   renderExpenses();
 }
 async function deleteExpense(id){
@@ -1734,21 +1986,56 @@ async function deleteExpense(id){
   await saveData(); renderExpenses();
 }
 
+/* ---------------- DEADLINES ---------------- */
+function renderDeadlines(){
+  const range=document.getElementById("dl_range").value;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const items=[];
+  db.students.forEach(s=>{
+    (s.installments||[]).forEach(i=>{
+      if(i.status==="Pending" && i.dueDate){
+        items.push({date:i.dueDate, type:"Installment Due", student:s.name, detail:i.title+" — "+fmt(i.amount), overdue: new Date(i.dueDate)<today});
+      }
+    });
+    if(s.visaInterviewDate){
+      items.push({date:s.visaInterviewDate, type:"Visa Interview / Deadline", student:s.name, detail:"Visa status: "+(s.visa||"—"), overdue: new Date(s.visaInterviewDate)<today});
+    }
+  });
+  let filtered=items;
+  if(range!=="ALL"){
+    const limit=new Date(today); limit.setDate(limit.getDate()+Number(range));
+    filtered=items.filter(x=>new Date(x.date)<=limit);
+  }
+  filtered.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  document.getElementById("deadlinesBody").innerHTML = filtered.map(x=>`
+    <tr>
+      <td>${x.date}</td>
+      <td><span class="badge muted">${x.type}</span></td>
+      <td>${x.student}</td>
+      <td>${x.detail}</td>
+      <td><span class="badge ${x.overdue?'bad':'warn'}">${x.overdue?'Overdue':'Upcoming'}</span></td>
+    </tr>
+  `).join("") || `<tr><td colspan="5">No deadlines in this range</td></tr>`;
+}
+
 /* ---------------- REPORTS ---------------- */
 function renderReports(){
   const s=db.students;
-  const now=new Date();
-  const collectedThisMonth=s.reduce((a,x)=>a+(x.payments||[]).filter(p=>{const d=new Date(p.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).reduce((b,p)=>b+Number(p.amount||0),0),0);
-  const expensesThisMonth=db.expenses.filter(e=>{const d=new Date(e.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).reduce((a,e)=>a+Number(e.amount||0),0);
+  const monthInput=document.getElementById("rep_month");
+  if(!monthInput.value) monthInput.value=new Date().toISOString().slice(0,7);
+  const [selYear, selMonth] = monthInput.value.split("-").map(Number);
+  const collectedSelMonth=s.reduce((a,x)=>a+(x.payments||[]).filter(p=>{const d=new Date(p.date);return (d.getMonth()+1)===selMonth&&d.getFullYear()===selYear;}).reduce((b,p)=>b+Number(p.amount||0),0),0);
+  const expensesSelMonth=db.expenses.filter(e=>{const d=new Date(e.date);return (d.getMonth()+1)===selMonth&&d.getFullYear()===selYear;}).reduce((a,e)=>a+Number(e.amount||0),0);
   const totalFee=s.reduce((a,x)=>a+Number(x.totalFee||0),0);
   const totalPaid=s.reduce((a,x)=>a+studentPaid(x),0);
   const totalDue=totalFee-totalPaid;
-  const netThisMonth=collectedThisMonth-expensesThisMonth;
+  const netSelMonth=collectedSelMonth-expensesSelMonth;
+  const monthLabel=new Date(selYear, selMonth-1, 1).toLocaleString('en',{month:'long',year:'numeric'});
   document.getElementById("reportCards").innerHTML=`
-    <div class="card accent"><h3>Collected This Month</h3><div class="num">${fmt(collectedThisMonth)}</div></div>
-    <div class="card"><h3>Expenses This Month</h3><div class="num">${fmt(expensesThisMonth)}</div></div>
-    <div class="card gold"><h3>Net This Month</h3><div class="num">${fmt(netThisMonth)}</div></div>
-    <div class="card"><h3>Total Due</h3><div class="num">${fmt(totalDue)}</div></div>
+    <div class="card accent"><h3>Collected — ${monthLabel}</h3><div class="num">${fmt(collectedSelMonth)}</div></div>
+    <div class="card"><h3>Expenses — ${monthLabel}</h3><div class="num">${fmt(expensesSelMonth)}</div></div>
+    <div class="card gold"><h3>Net — ${monthLabel}</h3><div class="num">${fmt(netSelMonth)}</div></div>
+    <div class="card"><h3>Total Due (All Time)</h3><div class="num">${fmt(totalDue)}</div></div>
   `;
   const sel=document.getElementById("rep_batch");
   const cur=sel.value;
@@ -1758,6 +2045,59 @@ function renderReports(){
   const attCur=attSel.value;
   attSel.innerHTML='<option value="">Select a batch</option>'+batchList().map(b=>`<option ${b===attCur?"selected":""}>${b}</option>`).join("");
   renderAttendanceReport();
+}
+function printMonthlyReport(){
+  const monthInput=document.getElementById("rep_month");
+  const [selYear, selMonth] = monthInput.value.split("-").map(Number);
+  const monthLabel=new Date(selYear, selMonth-1, 1).toLocaleString('en',{month:'long',year:'numeric'});
+  const s=db.students;
+  const collectedSelMonth=s.reduce((a,x)=>a+(x.payments||[]).filter(p=>{const d=new Date(p.date);return (d.getMonth()+1)===selMonth&&d.getFullYear()===selYear;}).reduce((b,p)=>b+Number(p.amount||0),0),0);
+  const expensesSelMonthList=db.expenses.filter(e=>{const d=new Date(e.date);return (d.getMonth()+1)===selMonth&&d.getFullYear()===selYear;});
+  const expensesSelMonth=expensesSelMonthList.reduce((a,e)=>a+Number(e.amount||0),0);
+  const netSelMonth=collectedSelMonth-expensesSelMonth;
+  const totalFee=s.reduce((a,x)=>a+Number(x.totalFee||0),0);
+  const totalPaid=s.reduce((a,x)=>a+studentPaid(x),0);
+  const totalDue=totalFee-totalPaid;
+  const a=db.agency;
+  const expenseRows=expensesSelMonthList.sort((x,y)=>new Date(x.date)-new Date(y.date))
+    .map(e=>`<tr><td style="padding:5px">${e.date}</td><td style="padding:5px">${e.cat}</td><td style="padding:5px;text-align:right">${fmt(e.amount)}</td><td style="padding:5px">${e.note||"—"}</td></tr>`).join("");
+  const batchRows=batchList().map(b=>{
+    const list=s.filter(x=>x.batch===b);
+    const fee=list.reduce((a2,x)=>a2+Number(x.totalFee||0),0);
+    const paid=list.reduce((a2,x)=>a2+studentPaid(x),0);
+    return `<tr><td style="padding:5px">${b}</td><td style="padding:5px">${list.length}</td><td style="padding:5px;text-align:right">${fmt(fee)}</td><td style="padding:5px;text-align:right">${fmt(paid)}</td><td style="padding:5px;text-align:right">${fmt(fee-paid)}</td></tr>`;
+  }).join("");
+  document.getElementById("monthlyReportPaperBox").innerHTML = `
+    <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
+    <div class="rhead">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain;flex-shrink:0">
+        <div><h2>${a.name}</h2><div style="font-size:.78rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div>
+      </div>
+      <div style="text-align:right"><b>MONTHLY REPORT</b><br><span style="font-size:.85rem">${monthLabel}</span><br><span style="font-size:.72rem;color:#777">Generated: ${new Date().toISOString().slice(0,10)}</span></div>
+    </div>
+    <h3 style="margin-top:0">Summary</h3>
+    <table style="width:100%;margin-bottom:16px">
+      <tr><td style="padding:5px"><b>Total Collected (${monthLabel})</b></td><td style="padding:5px;text-align:right">${fmt(collectedSelMonth)}</td></tr>
+      <tr><td style="padding:5px"><b>Total Expenses (${monthLabel})</b></td><td style="padding:5px;text-align:right">${fmt(expensesSelMonth)}</td></tr>
+      <tr><td style="padding:5px"><b>Net (${monthLabel})</b></td><td style="padding:5px;text-align:right"><b>${fmt(netSelMonth)}</b></td></tr>
+      <tr><td style="padding:5px"><b>Total Outstanding Due (All Students, All Time)</b></td><td style="padding:5px;text-align:right">${fmt(totalDue)}</td></tr>
+    </table>
+    <h3>Expense Breakdown — ${monthLabel}</h3>
+    <table style="width:100%;margin-bottom:16px">
+      <tr><th style="text-align:left;padding:5px">Date</th><th style="text-align:left;padding:5px">Category</th><th style="text-align:right;padding:5px">Amount</th><th style="text-align:left;padding:5px">Note</th></tr>
+      ${expenseRows || `<tr><td colspan="4" style="padding:5px">No expenses recorded this month</td></tr>`}
+    </table>
+    <h3>Batch-wise Summary (All Time)</h3>
+    <table style="width:100%">
+      <tr><th style="text-align:left;padding:5px">Batch</th><th style="text-align:left;padding:5px">Students</th><th style="text-align:right;padding:5px">Total Fee</th><th style="text-align:right;padding:5px">Paid</th><th style="text-align:right;padding:5px">Due</th></tr>
+      ${batchRows || `<tr><td colspan="5" style="padding:5px">No batches yet</td></tr>`}
+    </table>
+    <div class="signrow"><span>Prepared By</span><span>Approved By</span></div>
+  `;
+  document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+  document.getElementById("sec-monthlyreport").classList.add("active");
+  logActivity("Generated monthly report: "+monthLabel);
 }
 function renderAttendanceReport(){
   const batch=document.getElementById("att_rep_batch").value;
@@ -1806,6 +2146,15 @@ function renderSettings(){
       ${(u.username!=="admin" && session.role==="Admin") ? `<button class="btn small danger" onclick="removeStaffUser('${u.id}')">Remove</button>` : ""}
     </div>`).join("");
   document.getElementById("activityLogBox").innerHTML=(db.activityLog||[]).map(l=>`<div class="logItem"><b>${l.user}</b> — ${l.action} <span style="color:var(--muted)">(${l.time})</span></div>`).join("")||"<div class='note'>No log entries</div>";
+  const perfBody=document.getElementById("staffPerformanceBody");
+  if(perfBody){
+    perfBody.innerHTML = db.users.map(u=>{
+      const leadsAdded=db.leads.filter(l=>l.addedBy===u.name).length;
+      const leadsConverted=db.leads.filter(l=>l.convertedBy===u.name).length;
+      const studentsAdded=db.students.filter(s=>s.addedBy===u.name).length;
+      return `<tr><td>${u.name}</td><td>${leadsAdded}</td><td>${leadsConverted}</td><td>${studentsAdded}</td></tr>`;
+    }).join("") || `<tr><td colspan="4">No staff yet</td></tr>`;
+  }
   document.querySelectorAll(".admin-only").forEach(el=>{ el.style.display = session.role==="Admin" ? "" : "none"; });
 }
 async function saveAgencySettings(){
@@ -1858,6 +2207,10 @@ function exportBackup(){
   const a=document.createElement("a");
   a.href=url; a.download="GIA_backup_"+new Date().toISOString().slice(0,10)+".json";
   a.click(); URL.revokeObjectURL(url);
+  db.lastBackupDate=new Date().toISOString().slice(0,10);
+  saveData();
+  const banner=document.getElementById("backupReminderBanner");
+  if(banner) banner.remove();
 }
 function importBackup(evt){
   const file=evt.target.files[0]; if(!file)return;
