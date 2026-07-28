@@ -175,9 +175,9 @@ tr:hover td{background:var(--cream)}
   .shell{display:block}
   main.content{padding:0}
   .section{display:none!important}
-  .section.printme.active{display:block!important}
+  .section.printme.active{display:block!important;padding:12mm!important;box-sizing:border-box}
   body{background:#fff}
-  @page{size:A4;margin:14mm}
+  @page{size:A4;margin:0}
   .receiptPaper,.reportPaper{box-shadow:none!important;border:none!important;max-width:100%!important;padding:0!important}
   #sec-admprint .reportPaper{font-size:10.5px;line-height:1.3}
   #sec-admprint h2{font-size:15px;margin:0}
@@ -3439,21 +3439,39 @@ function renderPartners(){
   db.partnership = db.partnership || {allocations:[{name:"MD Sujan Bhuyan",pct:25},{name:"MD Rahman Bhuyan",pct:25},{name:"MD Sharif Bhuyan",pct:25},{name:"Company",pct:25}]};
   db.partnership.allocations = db.partnership.allocations || [{name:"Company",pct:100}];
   db.partnership.investments = db.partnership.investments || [];
+  db.partnership.withdrawals = db.partnership.withdrawals || [];
+  if(!db.partnership.presetDone){
+    if((db.partnership.investments||[]).length===0){
+      const d0=new Date().toISOString().slice(0,10);
+      db.partnership.investments=[
+        {id:"inv_p1",name:"MD Sujan Bhuyan",date:d0,amount:300000,note:"Initial capital"},
+        {id:"inv_p2",name:"MD Rahman Bhuyan",date:d0,amount:300000,note:"Initial capital"},
+        {id:"inv_p3",name:"MD Sharif Bhuyan",date:d0,amount:300000,note:"Initial capital"}
+      ];
+    }
+    db.partnership.presetDone=true;
+    saveData();
+  }
   const p=db.partnership;
   const now=new Date();
   const defMonth = window._ptMonth || (now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0"));
+  const today=new Date().toISOString().slice(0,10);
   const rows = p.allocations.map((al,i)=>`<tr>
       <td style="padding:4px"><input id="pt_name_${i}" value="${admEsc(al.name)}" oninput="renderPartnerCalc()" style="width:100%"></td>
       <td style="padding:4px;white-space:nowrap"><input id="pt_pct_${i}" type="number" step="0.01" value="${al.pct}" oninput="renderPartnerCalc()" style="width:90px"> %</td>
       <td style="padding:4px" class="no-print"><button class="btn small danger" onclick="partnerRemoveRow(${i})">✕</button></td>
     </tr>`).join("");
+  const nameOpts=p.allocations.map(al=>`<option value="${admEsc(al.name)}">`).join("");
   document.getElementById("partnersWrap").innerHTML=`
    <div class="formCard">
      <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
-       <div class="field"><label>Month</label><input type="month" id="pt_month" value="${defMonth}" onchange="renderPartnerCalc()"></div>
-       <div class="note" style="color:#777">🔒 Private — only your admin login can see this section.</div>
+       <div class="field"><label>Month (for monthly figures)</label><input type="month" id="pt_month" value="${defMonth}" onchange="renderPartnerCalc()"></div>
+       <div class="note" style="color:#777">🔒 Private — shudhu admin (MD Sharif Bhuyan) ei section dekhe.</div>
      </div>
-     <h4 style="color:var(--navy);margin:14px 0 6px">Partner &amp; Company Shares</h4>
+   </div>
+   <div class="formCard" style="margin-top:16px"><div id="pt_calc"></div></div>
+   <div class="formCard" style="margin-top:16px">
+     <h4 style="color:var(--navy);margin:0 0 6px">Profit Share Setup (%)</h4>
      <div style="overflow:auto"><table style="border-collapse:collapse"><tr style="background:var(--cream)"><th style="padding:4px;text-align:left">Name</th><th style="padding:4px;text-align:left">Share %</th><th class="no-print"></th></tr>${rows}</table></div>
      <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
        <button class="btn ghost small" onclick="partnerAddRow()">＋ Add Partner</button>
@@ -3461,22 +3479,35 @@ function renderPartners(){
        <button class="btn small" onclick="savePartners()">Save Shares</button>
      </div>
    </div>
-   <div class="formCard" style="margin-top:16px"><div id="pt_calc"></div></div>
-   <div class="formCard" style="margin-top:16px">
-     <h4 style="color:var(--navy);margin:0 0 8px">Investment / Capital Log</h4>
-     <div class="grid3">
-       <div class="field"><label>Investor</label><input id="inv_name" list="invNameList" placeholder="Partner / person name"></div>
-       <div class="field"><label>Date</label><input type="date" id="inv_date" value="${new Date().toISOString().slice(0,10)}"></div>
-       <div class="field"><label>Amount</label><input type="number" id="inv_amount" placeholder="0"></div>
-       <div class="field"><label>Note (optional)</label><input id="inv_note" placeholder="e.g. office setup"></div>
+   <div class="grid2" style="margin-top:16px">
+     <div class="formCard">
+       <h4 style="color:var(--navy);margin:0 0 8px">＋ Investment / Capital In</h4>
+       <div class="grid2">
+         <div class="field"><label>Investor</label><input id="inv_name" list="partyNameList" placeholder="Partner name"></div>
+         <div class="field"><label>Date</label><input type="date" id="inv_date" value="${today}"></div>
+         <div class="field"><label>Amount</label><input type="number" id="inv_amount" placeholder="0"></div>
+         <div class="field"><label>Note</label><input id="inv_note" placeholder="optional"></div>
+       </div>
+       <div style="margin-top:8px"><button class="btn small" onclick="addInvestment()">Add Investment</button></div>
+       <div id="inv_list" style="margin-top:12px"></div>
      </div>
-     <datalist id="invNameList">${p.allocations.map(al=>`<option value="${admEsc(al.name)}">`).join("")}</datalist>
-     <div style="margin-top:8px"><button class="btn small" onclick="addInvestment()">＋ Add Investment</button></div>
-     <div id="inv_list" style="margin-top:12px"></div>
+     <div class="formCard">
+       <h4 style="color:var(--navy);margin:0 0 8px">－ Withdrawal / Capital Out</h4>
+       <div class="grid2">
+         <div class="field"><label>Partner</label><input id="wd_name" list="partyNameList" placeholder="Partner name"></div>
+         <div class="field"><label>Date</label><input type="date" id="wd_date" value="${today}"></div>
+         <div class="field"><label>Amount</label><input type="number" id="wd_amount" placeholder="0"></div>
+         <div class="field"><label>Note</label><input id="wd_note" placeholder="optional"></div>
+       </div>
+       <div style="margin-top:8px"><button class="btn small" style="background:#C0392B" onclick="addWithdrawal()">Add Withdrawal</button></div>
+       <div id="wd_list" style="margin-top:12px"></div>
+     </div>
    </div>
-   <div style="text-align:right;margin-top:14px"><button class="btn gold" onclick="printPartnerStatement()">🖨 Print Statement</button></div>`;
+   <datalist id="partyNameList">${nameOpts}</datalist>
+   <div style="text-align:right;margin-top:14px"><button class="btn gold" onclick="printPartnerStatement()">🖨 Print Full Statement</button></div>`;
   renderPartnerCalc();
   renderInvestments();
+  renderWithdrawals();
 }
 function partnerReadInputs(){
   return db.partnership.allocations.map((al,i)=>{
@@ -3505,25 +3536,33 @@ function renderPartnerCalc(){
   const f=partnerFinance(mk);
   const monthLabel=mk?new Date(mk+"-01").toLocaleString('en',{month:'long',year:'numeric'}):"Selected month";
   const lossTag=v=>v<0?` <span style="color:#c00;font-size:.8rem">(Loss)</span>`:``;
-  const distRows=allocs.map(al=>{
-    const pct=Number(al.pct)||0;
-    return `<tr><td style="padding:5px">${admEsc(al.name)}</td><td style="padding:5px;text-align:right">${pct}%</td><td style="padding:5px;text-align:right">${fmt(f.netM*pct/100)}</td><td style="padding:5px;text-align:right">${fmt(f.netA*pct/100)}</td></tr>`;
-  }).join("");
+  const neg=v=>v<0?'color:#c00':'';
+  const accts=partnerCapitalAccounts();
+  const totalInvested=(db.partnership.investments||[]).reduce((a,x)=>a+Number(x.amount||0),0);
+  const totalWithdrawn=(db.partnership.withdrawals||[]).reduce((a,x)=>a+Number(x.amount||0),0);
+  const acctRows=accts.map(a=>`<tr><td style="padding:5px">${admEsc(a.name)}</td><td style="padding:5px;text-align:right">${a.pct}%</td><td style="padding:5px;text-align:right">${fmt(a.invested)}</td><td style="padding:5px;text-align:right;${neg(a.shareAll)}">${fmt(a.shareAll)}</td><td style="padding:5px;text-align:right">${fmt(a.withdrawn)}</td><td style="padding:5px;text-align:right;font-weight:700;${neg(a.balance)}">${fmt(a.balance)}</td></tr>`).join("");
   box.innerHTML=`
-    <h4 style="color:var(--navy);margin:0 0 8px">Profit / Loss Summary</h4>
+    <div class="cards" style="margin-bottom:12px">
+      <div class="card accent"><h3>Company Capital (Invested)</h3><div class="num">${fmt(totalInvested)}</div></div>
+      <div class="card ${f.netA<0?'':'gold'}"><h3>Net Profit / Loss (All-Time)</h3><div class="num" style="${neg(f.netA)}">${fmt(f.netA)}</div></div>
+      <div class="card"><h3>Net — ${monthLabel}</h3><div class="num" style="${neg(f.netM)}">${fmt(f.netM)}</div></div>
+      <div class="card"><h3>Total Withdrawn</h3><div class="num">${fmt(totalWithdrawn)}</div></div>
+    </div>
+    <h4 style="color:var(--navy);margin:0 0 8px">Profit / Loss</h4>
     <div style="overflow:auto"><table style="width:100%;margin-bottom:16px">
       <tr><th style="text-align:left;padding:5px"></th><th style="text-align:right;padding:5px">${monthLabel}</th><th style="text-align:right;padding:5px">All-Time</th></tr>
-      <tr><td style="padding:5px">Total Collected</td><td style="padding:5px;text-align:right">${fmt(f.cM)}</td><td style="padding:5px;text-align:right">${fmt(f.cA)}</td></tr>
+      <tr><td style="padding:5px">Total Collected (Income)</td><td style="padding:5px;text-align:right">${fmt(f.cM)}</td><td style="padding:5px;text-align:right">${fmt(f.cA)}</td></tr>
       <tr><td style="padding:5px">Total Expenses</td><td style="padding:5px;text-align:right">${fmt(f.eM)}</td><td style="padding:5px;text-align:right">${fmt(f.eA)}</td></tr>
       <tr><td style="padding:5px"><b>Net Profit / Loss</b></td><td style="padding:5px;text-align:right"><b>${fmt(f.netM)}</b>${lossTag(f.netM)}</td><td style="padding:5px;text-align:right"><b>${fmt(f.netA)}</b>${lossTag(f.netA)}</td></tr>
     </table></div>
-    <h4 style="color:var(--navy);margin:0 0 8px">Share Distribution ${ok?'':'<span style="color:#c00;font-size:.8rem">(fix % to total 100)</span>'}</h4>
+    <h4 style="color:var(--navy);margin:0 0 6px">Partner Capital Accounts ${ok?'':'<span style="color:#c00;font-size:.8rem">(fix % to total 100)</span>'}</h4>
+    <div class="note" style="color:#777;margin-bottom:6px">Balance = Invested + Profit Share (All-Time) − Withdrawn. Loss hole profit share minus, tai capital kome. Company-r share business-e theke jay.</div>
     <div style="overflow:auto"><table style="width:100%">
-      <tr><th style="text-align:left;padding:5px">Name</th><th style="text-align:right;padding:5px">Share</th><th style="text-align:right;padding:5px">${monthLabel}</th><th style="text-align:right;padding:5px">All-Time</th></tr>
-      ${distRows}
+      <tr><th style="text-align:left;padding:5px">Name</th><th style="text-align:right;padding:5px">Share</th><th style="text-align:right;padding:5px">Invested</th><th style="text-align:right;padding:5px">Profit Share</th><th style="text-align:right;padding:5px">Withdrawn</th><th style="text-align:right;padding:5px">Balance</th></tr>
+      ${acctRows}
     </table></div>
-    <h4 style="color:var(--navy);margin:14px 0 8px">Share Distribution Chart (All-Time)</h4>
-    ${partnerShareChartSVG(allocs, f.netA)}`;
+    <h4 style="color:var(--navy);margin:14px 0 8px">Capital Balance Chart</h4>
+    ${partnerBalanceChartSVG(accts)}`;
 }
 
 
@@ -3553,12 +3592,12 @@ async function addInvestment(){
   logActivity("Investment added: "+name+" "+fmt(amount));
   await saveData();
   document.getElementById("inv_amount").value=""; document.getElementById("inv_note").value="";
-  renderInvestments();
+  renderInvestments(); renderPartnerCalc();
 }
 async function deleteInvestment(id){
   if(!confirm("Delete this investment entry?"))return;
   db.partnership.investments=(db.partnership.investments||[]).filter(x=>x.id!==id);
-  logActivity("Investment entry deleted"); await saveData(); renderInvestments();
+  logActivity("Investment entry deleted"); await saveData(); renderInvestments(); renderPartnerCalc();
 }
 function partnerShareChartSVG(allocs, net){
   const vals=allocs.map(a=>({name:a.name, amt:net*(Number(a.pct)||0)/100}));
@@ -3579,25 +3618,32 @@ function printPartnerStatement(){
   const mk=partnerMonthKey(); const f=partnerFinance(mk);
   const monthLabel=mk?new Date(mk+"-01").toLocaleString('en',{month:'long',year:'numeric'}):"Selected month";
   const a=db.agency;
-  const invs=(p.investments||[]); const totalInv=invs.reduce((s,x)=>s+Number(x.amount||0),0);
+  const accts=partnerCapitalAccounts();
+  const totalInv=(p.investments||[]).reduce((s,x)=>s+Number(x.amount||0),0);
+  const totalWd=(p.withdrawals||[]).reduce((s,x)=>s+Number(x.amount||0),0);
   const cell='border:1px solid #ccc;padding:5px';
-  const distRows=allocs.map(al=>{const pct=Number(al.pct)||0; return `<tr><td style="${cell}">${admEsc(al.name)}</td><td style="${cell};text-align:right">${pct}%</td><td style="${cell};text-align:right">${fmt(f.netM*pct/100)}</td><td style="${cell};text-align:right">${fmt(f.netA*pct/100)}</td></tr>`;}).join("");
-  const invRows=invs.slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||"")}</td></tr>`).join("");
+  const acctRows=accts.map(a2=>`<tr><td style="${cell}">${admEsc(a2.name)}</td><td style="${cell};text-align:right">${a2.pct}%</td><td style="${cell};text-align:right">${fmt(a2.invested)}</td><td style="${cell};text-align:right">${fmt(a2.shareAll)}</td><td style="${cell};text-align:right">${fmt(a2.withdrawn)}</td><td style="${cell};text-align:right"><b>${fmt(a2.balance)}</b></td></tr>`).join("");
+  const invRows=(p.investments||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||"")}</td></tr>`).join("");
+  const wdRows=(p.withdrawals||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||"")}</td></tr>`).join("");
   document.getElementById("partnerPrintBox").innerHTML=`
     <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
     <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
-    <div style="text-align:right"><b>INVESTMENT &amp; PROFIT STATEMENT</b><br><span style="font-size:.8rem">${monthLabel}</span><br><span style="font-size:.7rem;color:#777">Confidential &bull; Generated ${new Date().toISOString().slice(0,10)}</span></div></div>
+    <div style="text-align:right"><b>INVESTMENT &amp; PROFIT STATEMENT</b><br><span style="font-size:.8rem">${monthLabel}</span><br><span style="font-size:.7rem;color:#777">Confidential &bull; ${new Date().toISOString().slice(0,10)}</span></div></div>
     <h3>Profit / Loss</h3>
     <table style="width:100%;border-collapse:collapse;font-size:.85rem"><tr><th style="${cell};text-align:left"></th><th style="${cell};text-align:right">${monthLabel}</th><th style="${cell};text-align:right">All-Time</th></tr>
       <tr><td style="${cell}">Total Collected</td><td style="${cell};text-align:right">${fmt(f.cM)}</td><td style="${cell};text-align:right">${fmt(f.cA)}</td></tr>
       <tr><td style="${cell}">Total Expenses</td><td style="${cell};text-align:right">${fmt(f.eM)}</td><td style="${cell};text-align:right">${fmt(f.eA)}</td></tr>
       <tr><td style="${cell}"><b>Net Profit / Loss</b></td><td style="${cell};text-align:right"><b>${fmt(f.netM)}</b></td><td style="${cell};text-align:right"><b>${fmt(f.netA)}</b></td></tr>
     </table>
-    <h3>Share Distribution</h3>
-    <table style="width:100%;border-collapse:collapse;font-size:.85rem"><tr><th style="${cell};text-align:left">Name</th><th style="${cell};text-align:right">Share</th><th style="${cell};text-align:right">${monthLabel}</th><th style="${cell};text-align:right">All-Time</th></tr>${distRows}</table>
-    <div style="margin:10px 0">${partnerShareChartSVG(allocs, f.netA)}</div>
-    <h3>Investment / Capital &mdash; Total ${fmt(totalInv)}</h3>
-    <table style="width:100%;border-collapse:collapse;font-size:.85rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Investor</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${invRows||`<tr><td colspan="4" style="${cell}">No investment recorded</td></tr>`}</table>
+    <h3>Partner Capital Accounts</h3>
+    <div style="font-size:.72rem;color:#666;margin-bottom:4px">Balance = Invested + Profit Share (All-Time) &minus; Withdrawn</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr><th style="${cell};text-align:left">Name</th><th style="${cell};text-align:right">Share</th><th style="${cell};text-align:right">Invested</th><th style="${cell};text-align:right">Profit Share</th><th style="${cell};text-align:right">Withdrawn</th><th style="${cell};text-align:right">Balance</th></tr>${acctRows}
+      <tr><td style="${cell}"><b>Total</b></td><td style="${cell}"></td><td style="${cell};text-align:right"><b>${fmt(totalInv)}</b></td><td style="${cell};text-align:right"><b>${fmt(f.netA)}</b></td><td style="${cell};text-align:right"><b>${fmt(totalWd)}</b></td><td style="${cell};text-align:right"><b>${fmt(totalInv+f.netA-totalWd)}</b></td></tr>
+    </table>
+    <div style="display:flex;gap:16px;margin-top:8px">
+      <div style="flex:1"><h3>Investments (Total ${fmt(totalInv)})</h3><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Investor</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${invRows||`<tr><td colspan="4" style="${cell}">None</td></tr>`}</table></div>
+      <div style="flex:1"><h3>Withdrawals (Total ${fmt(totalWd)})</h3><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${wdRows||`<tr><td colspan="4" style="${cell}">None</td></tr>`}</table></div>
+    </div>
     <div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
   document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
   document.getElementById("sec-partnerprint").classList.add("active");
@@ -3867,6 +3913,65 @@ async function saveUserEdit(id){
   if(session && session.username===u.username){ session.role=u.role; session.nav=u.nav||null; buildNav(); }
   alert("User access saved for "+u.name);
 }
+
+/* ---- Partner capital accounts, withdrawals, balance chart ---- */
+function partnerCapitalAccounts(){
+  const p=db.partnership;
+  const allocs=partnerReadInputs();
+  const f=partnerFinance(partnerMonthKey());
+  const invBy={}, wdBy={};
+  (p.investments||[]).forEach(x=>{ invBy[x.name]=(invBy[x.name]||0)+Number(x.amount||0); });
+  (p.withdrawals||[]).forEach(x=>{ wdBy[x.name]=(wdBy[x.name]||0)+Number(x.amount||0); });
+  return allocs.map(al=>{
+    const pct=Number(al.pct)||0;
+    const invested=invBy[al.name]||0;
+    const shareAll=f.netA*pct/100;
+    const withdrawn=wdBy[al.name]||0;
+    return {name:al.name, pct, invested, shareAll, withdrawn, balance:invested+shareAll-withdrawn};
+  });
+}
+function partnerBalanceChartSVG(accts){
+  const vals=accts.map(a=>({name:a.name, amt:a.balance}));
+  const max=Math.max(1,...vals.map(v=>Math.abs(v.amt)));
+  const rowH=28,w=560,labelW=150,barMax=w-labelW-100,h=Math.max(1,vals.length)*rowH+10;
+  const palette=["#1F3864","#C0392B","#E7B84B","#2e7d32","#6A4C93","#0E7C7B","#B5651D"];
+  let rows="";
+  vals.forEach((v,i)=>{
+    const y=i*rowH+8, bw=Math.round(Math.abs(v.amt)/max*barMax);
+    rows+=`<text x="0" y="${y+14}" font-size="12" fill="var(--ink)">${admEsc(v.name.length>18?v.name.slice(0,17)+'…':v.name)}</text>`;
+    rows+=`<rect x="${labelW}" y="${y}" width="${bw}" height="16" rx="3" fill="${v.amt<0?'#C0392B':palette[i%palette.length]}"></rect>`;
+    rows+=`<text x="${labelW+bw+6}" y="${y+14}" font-size="11" font-weight="700" fill="var(--ink)">${fmt(v.amt)}</text>`;
+  });
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${rows}</svg>`;
+}
+function renderWithdrawals(){
+  const box=document.getElementById("wd_list"); if(!box) return;
+  const wds=(db.partnership.withdrawals||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const total=wds.reduce((a,x)=>a+Number(x.amount||0),0);
+  box.innerHTML=`<div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:5px">Date</th><th style="text-align:left;padding:5px">Partner</th><th style="text-align:right;padding:5px">Amount</th><th style="text-align:left;padding:5px">Note</th><th class="no-print"></th></tr>
+  ${wds.length?wds.map(x=>`<tr><td style="padding:5px">${x.date||""}</td><td style="padding:5px">${admEsc(x.name)}</td><td style="padding:5px;text-align:right">${fmt(x.amount)}</td><td style="padding:5px">${admEsc(x.note||"")}</td><td class="no-print" style="padding:5px"><button class="btn small danger" onclick="deleteWithdrawal('${x.id}')">✕</button></td></tr>`).join(""):`<tr><td colspan="5" style="padding:5px">No withdrawals yet</td></tr>`}
+  <tr style="border-top:2px solid var(--line)"><td colspan="2" style="padding:6px"><b>Total Withdrawn</b></td><td style="padding:6px;text-align:right"><b>${fmt(total)}</b></td><td colspan="2"></td></tr></table></div>`;
+}
+async function addWithdrawal(){
+  const name=(document.getElementById("wd_name").value||"").trim();
+  const date=document.getElementById("wd_date").value;
+  const amount=Number(document.getElementById("wd_amount").value)||0;
+  const note=(document.getElementById("wd_note").value||"").trim();
+  if(!name){alert("Enter partner name");return;}
+  if(amount<=0){alert("Enter a valid amount");return;}
+  db.partnership.withdrawals=db.partnership.withdrawals||[];
+  db.partnership.withdrawals.push({id:"wd"+Date.now(),name,date,amount,note});
+  logActivity("Withdrawal: "+name+" "+fmt(amount));
+  await saveData();
+  document.getElementById("wd_amount").value=""; document.getElementById("wd_note").value="";
+  renderWithdrawals(); renderPartnerCalc();
+}
+async function deleteWithdrawal(id){
+  if(!confirm("Delete this withdrawal entry?"))return;
+  db.partnership.withdrawals=(db.partnership.withdrawals||[]).filter(x=>x.id!==id);
+  logActivity("Withdrawal entry deleted"); await saveData(); renderWithdrawals(); renderPartnerCalc();
+}
+
 
 loadData();
 </script>
