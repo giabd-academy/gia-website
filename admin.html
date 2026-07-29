@@ -3440,6 +3440,7 @@ function renderPartners(){
   db.partnership.allocations = db.partnership.allocations || [{name:"Company",pct:100}];
   db.partnership.investments = db.partnership.investments || [];
   db.partnership.withdrawals = db.partnership.withdrawals || [];
+  db.partnership.otherIncome = db.partnership.otherIncome || [];
   if(!db.partnership.presetDone){
     if((db.partnership.investments||[]).length===0){
       const d0=new Date().toISOString().slice(0,10);
@@ -3503,11 +3504,22 @@ function renderPartners(){
        <div id="wd_list" style="margin-top:12px"></div>
      </div>
    </div>
+   <div class="formCard" style="margin-top:16px">
+     <h4 style="color:var(--navy);margin:0 0 8px">＋ Other Income (non-fee, e.g. service charge, commission)</h4>
+     <div class="grid3">
+       <div class="field"><label>Date</label><input type="date" id="oi_date" value="${today}"></div>
+       <div class="field"><label>Amount</label><input type="number" id="oi_amount" placeholder="0"></div>
+       <div class="field"><label>Source / Note</label><input id="oi_note" placeholder="e.g. service charge"></div>
+     </div>
+     <div style="margin-top:8px"><button class="btn small" onclick="addOtherIncome()">Add Income</button></div>
+     <div id="oi_list" style="margin-top:12px"></div>
+   </div>
    <datalist id="partyNameList">${nameOpts}</datalist>
    <div style="text-align:right;margin-top:14px"><button class="btn gold" onclick="printPartnerStatement()">🖨 Print Full Statement</button></div>`;
   renderPartnerCalc();
   renderInvestments();
   renderWithdrawals();
+  renderOtherIncome();
 }
 function partnerReadInputs(){
   return db.partnership.allocations.map((al,i)=>{
@@ -3521,9 +3533,12 @@ async function savePartners(){ db.partnership.allocations=partnerReadInputs(); l
 function partnerFinance(monthKey){
   let cM=0,cA=0;
   (db.students||[]).forEach(s=>(s.payments||[]).forEach(p=>{ const amt=Number(p.amount||0); cA+=amt; if((p.date||"").slice(0,7)===monthKey)cM+=amt; }));
+  let oM=0,oA=0;
+  (((db.partnership||{}).otherIncome)||[]).forEach(x=>{ const amt=Number(x.amount||0); oA+=amt; if((x.date||"").slice(0,7)===monthKey)oM+=amt; });
   let eM=0,eA=0;
   (db.expenses||[]).forEach(e=>{ const amt=Number(e.amount||0); eA+=amt; if((e.date||"").slice(0,7)===monthKey)eM+=amt; });
-  return {cM,eM,netM:cM-eM,cA,eA,netA:cA-eA};
+  const incM=cM+oM, incA=cA+oA;
+  return {cM,cA,oM,oA,incM,incA,eM,eA,netM:incM-eM,netA:incA-eA};
 }
 function renderPartnerCalc(){
   const box=document.getElementById("pt_calc"); if(!box) return;
@@ -3533,36 +3548,40 @@ function renderPartnerCalc(){
   const tn=document.getElementById("pt_total_note");
   if(tn) tn.innerHTML=`Total: <b style="color:${ok?'#2e7d32':'#c00'}">${total}%</b>`+(ok?" ✓":" (should equal 100%)");
   const mk=partnerMonthKey(); window._ptMonth=mk;
-  const f=partnerFinance(mk);
+  const acc=partnerCapitalAccounts();
+  const f=acc.f;
   const monthLabel=mk?new Date(mk+"-01").toLocaleString('en',{month:'long',year:'numeric'}):"Selected month";
-  const lossTag=v=>v<0?` <span style="color:#c00;font-size:.8rem">(Loss)</span>`:``;
   const neg=v=>v<0?'color:#c00':'';
-  const accts=partnerCapitalAccounts();
+  const lossTag=v=>v<0?` <span style="color:#c00;font-size:.8rem">(Loss)</span>`:``;
   const totalInvested=(db.partnership.investments||[]).reduce((a,x)=>a+Number(x.amount||0),0);
   const totalWithdrawn=(db.partnership.withdrawals||[]).reduce((a,x)=>a+Number(x.amount||0),0);
-  const acctRows=accts.map(a=>`<tr><td style="padding:5px">${admEsc(a.name)}</td><td style="padding:5px;text-align:right">${a.pct}%</td><td style="padding:5px;text-align:right">${fmt(a.invested)}</td><td style="padding:5px;text-align:right;${neg(a.shareAll)}">${fmt(a.shareAll)}</td><td style="padding:5px;text-align:right">${fmt(a.withdrawn)}</td><td style="padding:5px;text-align:right;font-weight:700;${neg(a.balance)}">${fmt(a.balance)}</td></tr>`).join("");
+  const companyCash=totalInvested+f.netA-totalWithdrawn;
+  const acctRows=acc.rows.map(a=>`<tr><td style="padding:5px">${admEsc(a.name)}</td><td style="padding:5px;text-align:right">${a.pct}%</td><td style="padding:5px;text-align:right;${neg(a.capital)}">${fmt(a.capital)}</td><td style="padding:5px;text-align:right">${fmt(a.profitEarned)}</td><td style="padding:5px;text-align:right">${fmt(a.withdrawn)}</td><td style="padding:5px;text-align:right;${neg(a.availableProfit)}">${fmt(a.availableProfit)}</td><td style="padding:5px;text-align:right;font-weight:700;${neg(a.totalValue)}">${fmt(a.totalValue)}</td></tr>`).join("");
   box.innerHTML=`
-    <div class="cards" style="margin-bottom:12px">
-      <div class="card accent"><h3>Company Capital (Invested)</h3><div class="num">${fmt(totalInvested)}</div></div>
-      <div class="card ${f.netA<0?'':'gold'}"><h3>Net Profit / Loss (All-Time)</h3><div class="num" style="${neg(f.netA)}">${fmt(f.netA)}</div></div>
-      <div class="card"><h3>Net — ${monthLabel}</h3><div class="num" style="${neg(f.netM)}">${fmt(f.netM)}</div></div>
-      <div class="card"><h3>Total Withdrawn</h3><div class="num">${fmt(totalWithdrawn)}</div></div>
+    <div class="cards" style="margin-bottom:8px">
+      <div class="card accent"><h3>Capital Invested</h3><div class="num">${fmt(totalInvested)}</div></div>
+      <div class="card ${companyCash<0?'':'gold'}"><h3>Company Cash in Hand</h3><div class="num" style="${neg(companyCash)}">${fmt(companyCash)}</div></div>
+      <div class="card"><h3>Net Profit / Loss (All-Time)</h3><div class="num" style="${neg(f.netA)}">${fmt(f.netA)}</div></div>
+      <div class="card gold"><h3>Company Retained (25% of profit)</h3><div class="num">${fmt(acc.companyRetained)}</div></div>
     </div>
-    <h4 style="color:var(--navy);margin:0 0 8px">Profit / Loss</h4>
+    <div class="note" style="color:#777;margin-bottom:12px">💡 <b>Company Cash = Capital (${fmt(totalInvested)}) + Total Income − Expense − Partner Withdrawals.</b> Income (fee + other) company-te dhoke, expense company theke jay. Lab hole 25% company rakhe, baki 75% (25% kore) 3 partner-er Profit-e jomা hoy. <b>Withdraw shudhu Profit theke</b>; Capital ferot shudhu partner exit-e. Loss hole partner-der Capital theke bhag kore kombe.</div>
+    <h4 style="color:var(--navy);margin:0 0 8px">Company Income & Expense</h4>
     <div style="overflow:auto"><table style="width:100%;margin-bottom:16px">
       <tr><th style="text-align:left;padding:5px"></th><th style="text-align:right;padding:5px">${monthLabel}</th><th style="text-align:right;padding:5px">All-Time</th></tr>
-      <tr><td style="padding:5px">Total Collected (Income)</td><td style="padding:5px;text-align:right">${fmt(f.cM)}</td><td style="padding:5px;text-align:right">${fmt(f.cA)}</td></tr>
+      <tr><td style="padding:5px">Student Fees</td><td style="padding:5px;text-align:right">${fmt(f.cM)}</td><td style="padding:5px;text-align:right">${fmt(f.cA)}</td></tr>
+      <tr><td style="padding:5px">Other Income</td><td style="padding:5px;text-align:right">${fmt(f.oM)}</td><td style="padding:5px;text-align:right">${fmt(f.oA)}</td></tr>
+      <tr><td style="padding:5px"><b>Total Income</b></td><td style="padding:5px;text-align:right"><b>${fmt(f.incM)}</b></td><td style="padding:5px;text-align:right"><b>${fmt(f.incA)}</b></td></tr>
       <tr><td style="padding:5px">Total Expenses</td><td style="padding:5px;text-align:right">${fmt(f.eM)}</td><td style="padding:5px;text-align:right">${fmt(f.eA)}</td></tr>
       <tr><td style="padding:5px"><b>Net Profit / Loss</b></td><td style="padding:5px;text-align:right"><b>${fmt(f.netM)}</b>${lossTag(f.netM)}</td><td style="padding:5px;text-align:right"><b>${fmt(f.netA)}</b>${lossTag(f.netA)}</td></tr>
     </table></div>
-    <h4 style="color:var(--navy);margin:0 0 6px">Partner Capital Accounts ${ok?'':'<span style="color:#c00;font-size:.8rem">(fix % to total 100)</span>'}</h4>
-    <div class="note" style="color:#777;margin-bottom:6px">Balance = Invested + Profit Share (All-Time) − Withdrawn. Loss hole profit share minus, tai capital kome. Company-r share business-e theke jay.</div>
+    <h4 style="color:var(--navy);margin:0 0 6px">Partner Accounts ${ok?'':'<span style="color:#c00;font-size:.8rem">(fix % to 100)</span>'}</h4>
     <div style="overflow:auto"><table style="width:100%">
-      <tr><th style="text-align:left;padding:5px">Name</th><th style="text-align:right;padding:5px">Share</th><th style="text-align:right;padding:5px">Invested</th><th style="text-align:right;padding:5px">Profit Share</th><th style="text-align:right;padding:5px">Withdrawn</th><th style="text-align:right;padding:5px">Balance</th></tr>
+      <tr><th style="text-align:left;padding:5px">Partner</th><th style="text-align:right;padding:5px">Share</th><th style="text-align:right;padding:5px">Capital</th><th style="text-align:right;padding:5px">Profit Earned</th><th style="text-align:right;padding:5px">Withdrawn</th><th style="text-align:right;padding:5px">Available Profit</th><th style="text-align:right;padding:5px">Total Value</th></tr>
       ${acctRows}
+      <tr style="border-top:2px solid var(--navy);background:var(--cream)"><td style="padding:6px"><b>Company (Retained)</b></td><td style="padding:6px;text-align:right">${acc.companyPct}%</td><td colspan="4" style="padding:6px;color:#777">25% of profit — stays in business to run it</td><td style="padding:6px;text-align:right;font-weight:700">${fmt(acc.companyRetained)}</td></tr>
     </table></div>
-    <h4 style="color:var(--navy);margin:14px 0 8px">Capital Balance Chart</h4>
-    ${partnerBalanceChartSVG(accts)}`;
+    <h4 style="color:var(--navy);margin:14px 0 8px">Partner Total Value Chart</h4>
+    ${partnerBalanceChartSVG(acc.rows.map(a=>({name:a.name, balance:a.totalValue})))}`;
 }
 
 
@@ -3614,42 +3633,49 @@ function partnerShareChartSVG(allocs, net){
   return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${rows}</svg>`;
 }
 function printPartnerStatement(){
-  const p=db.partnership; const allocs=partnerReadInputs();
-  const mk=partnerMonthKey(); const f=partnerFinance(mk);
+  const p=db.partnership; const acc=partnerCapitalAccounts(); const f=acc.f;
+  const mk=partnerMonthKey();
   const monthLabel=mk?new Date(mk+"-01").toLocaleString('en',{month:'long',year:'numeric'}):"Selected month";
   const a=db.agency;
-  const accts=partnerCapitalAccounts();
   const totalInv=(p.investments||[]).reduce((s,x)=>s+Number(x.amount||0),0);
   const totalWd=(p.withdrawals||[]).reduce((s,x)=>s+Number(x.amount||0),0);
+  const companyCash=totalInv+f.netA-totalWd;
   const cell='border:1px solid #ccc;padding:5px';
-  const acctRows=accts.map(a2=>`<tr><td style="${cell}">${admEsc(a2.name)}</td><td style="${cell};text-align:right">${a2.pct}%</td><td style="${cell};text-align:right">${fmt(a2.invested)}</td><td style="${cell};text-align:right">${fmt(a2.shareAll)}</td><td style="${cell};text-align:right">${fmt(a2.withdrawn)}</td><td style="${cell};text-align:right"><b>${fmt(a2.balance)}</b></td></tr>`).join("");
-  const invRows=(p.investments||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||"")}</td></tr>`).join("");
-  const wdRows=(p.withdrawals||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||"")}</td></tr>`).join("");
+  const acctRows=acc.rows.map(a2=>`<tr><td style="${cell}">${admEsc(a2.name)}</td><td style="${cell};text-align:right">${a2.pct}%</td><td style="${cell};text-align:right">${fmt(a2.capital)}</td><td style="${cell};text-align:right">${fmt(a2.profitEarned)}</td><td style="${cell};text-align:right">${fmt(a2.withdrawn)}</td><td style="${cell};text-align:right">${fmt(a2.availableProfit)}</td><td style="${cell};text-align:right"><b>${fmt(a2.totalValue)}</b></td></tr>`).join("");
+  const invRows=(p.investments||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join("");
+  const wdRows=(p.withdrawals||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join("");
+  const oiRows=((p.otherIncome)||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.note||"")}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join("");
   document.getElementById("partnerPrintBox").innerHTML=`
     <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
     <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
     <div style="text-align:right"><b>INVESTMENT &amp; PROFIT STATEMENT</b><br><span style="font-size:.8rem">${monthLabel}</span><br><span style="font-size:.7rem;color:#777">Confidential &bull; ${new Date().toISOString().slice(0,10)}</span></div></div>
-    <h3>Profit / Loss</h3>
-    <table style="width:100%;border-collapse:collapse;font-size:.85rem"><tr><th style="${cell};text-align:left"></th><th style="${cell};text-align:right">${monthLabel}</th><th style="${cell};text-align:right">All-Time</th></tr>
-      <tr><td style="${cell}">Total Collected</td><td style="${cell};text-align:right">${fmt(f.cM)}</td><td style="${cell};text-align:right">${fmt(f.cA)}</td></tr>
+    <h3>Company Income &amp; Expense</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr><th style="${cell};text-align:left"></th><th style="${cell};text-align:right">${monthLabel}</th><th style="${cell};text-align:right">All-Time</th></tr>
+      <tr><td style="${cell}">Student Fees</td><td style="${cell};text-align:right">${fmt(f.cM)}</td><td style="${cell};text-align:right">${fmt(f.cA)}</td></tr>
+      <tr><td style="${cell}">Other Income</td><td style="${cell};text-align:right">${fmt(f.oM)}</td><td style="${cell};text-align:right">${fmt(f.oA)}</td></tr>
+      <tr><td style="${cell}"><b>Total Income</b></td><td style="${cell};text-align:right"><b>${fmt(f.incM)}</b></td><td style="${cell};text-align:right"><b>${fmt(f.incA)}</b></td></tr>
       <tr><td style="${cell}">Total Expenses</td><td style="${cell};text-align:right">${fmt(f.eM)}</td><td style="${cell};text-align:right">${fmt(f.eA)}</td></tr>
       <tr><td style="${cell}"><b>Net Profit / Loss</b></td><td style="${cell};text-align:right"><b>${fmt(f.netM)}</b></td><td style="${cell};text-align:right"><b>${fmt(f.netA)}</b></td></tr>
     </table>
-    <h3>Partner Capital Accounts</h3>
-    <div style="font-size:.72rem;color:#666;margin-bottom:4px">Balance = Invested + Profit Share (All-Time) &minus; Withdrawn</div>
-    <table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr><th style="${cell};text-align:left">Name</th><th style="${cell};text-align:right">Share</th><th style="${cell};text-align:right">Invested</th><th style="${cell};text-align:right">Profit Share</th><th style="${cell};text-align:right">Withdrawn</th><th style="${cell};text-align:right">Balance</th></tr>${acctRows}
-      <tr><td style="${cell}"><b>Total</b></td><td style="${cell}"></td><td style="${cell};text-align:right"><b>${fmt(totalInv)}</b></td><td style="${cell};text-align:right"><b>${fmt(f.netA)}</b></td><td style="${cell};text-align:right"><b>${fmt(totalWd)}</b></td><td style="${cell};text-align:right"><b>${fmt(totalInv+f.netA-totalWd)}</b></td></tr>
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px">
+      <tr><td style="${cell}">Capital Invested</td><td style="${cell};text-align:right">${fmt(totalInv)}</td><td style="${cell}">Company Retained (25%)</td><td style="${cell};text-align:right">${fmt(acc.companyRetained)}</td></tr>
+      <tr><td style="${cell}"><b>Company Cash in Hand</b></td><td style="${cell};text-align:right"><b>${fmt(companyCash)}</b></td><td style="${cell}">Total Withdrawn</td><td style="${cell};text-align:right">${fmt(totalWd)}</td></tr>
     </table>
-    <div style="display:flex;gap:16px;margin-top:8px">
-      <div style="flex:1"><h3>Investments (Total ${fmt(totalInv)})</h3><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Investor</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${invRows||`<tr><td colspan="4" style="${cell}">None</td></tr>`}</table></div>
-      <div style="flex:1"><h3>Withdrawals (Total ${fmt(totalWd)})</h3><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${wdRows||`<tr><td colspan="4" style="${cell}">None</td></tr>`}</table></div>
+    <h3>Partner Accounts</h3>
+    <div style="font-size:.72rem;color:#666;margin-bottom:4px">Withdraw shudhu Profit theke; Capital ferot shudhu exit-e. Loss hole Capital kombe.</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.8rem"><tr><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Share</th><th style="${cell};text-align:right">Capital</th><th style="${cell};text-align:right">Profit Earned</th><th style="${cell};text-align:right">Withdrawn</th><th style="${cell};text-align:right">Available</th><th style="${cell};text-align:right">Total Value</th></tr>${acctRows}
+      <tr style="background:#f0ece0"><td style="${cell}"><b>Company (Retained)</b></td><td style="${cell};text-align:right">${acc.companyPct}%</td><td colspan="4" style="${cell};color:#666">Stays in business</td><td style="${cell};text-align:right"><b>${fmt(acc.companyRetained)}</b></td></tr>
+    </table>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <div style="flex:1"><h3>Investments (${fmt(totalInv)})</h3><table style="width:100%;border-collapse:collapse;font-size:.76rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Investor</th><th style="${cell};text-align:right">Amount</th></tr>${invRows||`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table></div>
+      <div style="flex:1"><h3>Withdrawals (${fmt(totalWd)})</h3><table style="width:100%;border-collapse:collapse;font-size:.76rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Amount</th></tr>${wdRows||`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table></div>
+      <div style="flex:1"><h3>Other Income (${fmt(f.oA)})</h3><table style="width:100%;border-collapse:collapse;font-size:.76rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Source</th><th style="${cell};text-align:right">Amount</th></tr>${oiRows||`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table></div>
     </div>
     <div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
   document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
   document.getElementById("sec-partnerprint").classList.add("active");
   logActivity("Printed investment & profit statement");
 }
-
 
 /* ---- Custom Report Builder ---- */
 function crTrendSVG(){
@@ -3919,16 +3945,26 @@ function partnerCapitalAccounts(){
   const p=db.partnership;
   const allocs=partnerReadInputs();
   const f=partnerFinance(partnerMonthKey());
+  const net=f.netA;
+  const companyAlloc=allocs.find(a=>a.name==="Company");
+  const companyPct=companyAlloc?(Number(companyAlloc.pct)||0):0;
+  const partners=allocs.filter(a=>a.name!=="Company");
+  const sumPartnerPct=partners.reduce((s,a)=>s+(Number(a.pct)||0),0)||1;
   const invBy={}, wdBy={};
   (p.investments||[]).forEach(x=>{ invBy[x.name]=(invBy[x.name]||0)+Number(x.amount||0); });
   (p.withdrawals||[]).forEach(x=>{ wdBy[x.name]=(wdBy[x.name]||0)+Number(x.amount||0); });
-  return allocs.map(al=>{
-    const pct=Number(al.pct)||0;
-    const invested=invBy[al.name]||0;
-    const shareAll=f.netA*pct/100;
-    const withdrawn=wdBy[al.name]||0;
-    return {name:al.name, pct, invested, shareAll, withdrawn, balance:invested+shareAll-withdrawn};
+  const rows=partners.map(a=>{
+    const pct=Number(a.pct)||0;
+    const invested=invBy[a.name]||0;
+    const profitEarned = net>0 ? net*pct/100 : 0;
+    const lossShare = net<0 ? (-net)*(pct/sumPartnerPct) : 0;
+    const capital = invested - lossShare;
+    const withdrawn = wdBy[a.name]||0;
+    const availableProfit = profitEarned - withdrawn;
+    return {name:a.name, pct, invested, profitEarned, lossShare, capital, withdrawn, availableProfit, totalValue:capital+availableProfit};
   });
+  const companyRetained = net>0 ? net*companyPct/100 : 0;
+  return {rows, companyPct, companyRetained, net, f};
 }
 function partnerBalanceChartSVG(accts){
   const vals=accts.map(a=>({name:a.name, amt:a.balance}));
@@ -3959,6 +3995,11 @@ async function addWithdrawal(){
   const note=(document.getElementById("wd_note").value||"").trim();
   if(!name){alert("Enter partner name");return;}
   if(amount<=0){alert("Enter a valid amount");return;}
+  const acc=partnerCapitalAccounts();
+  const row=acc.rows.find(r=>r.name===name);
+  if(row && amount>row.availableProfit+0.001){
+    if(!confirm(name+"-er available profit only "+fmt(row.availableProfit)+".\nWithdraw shudhu profit theke kora uchit (capital ferot shudhu exit-e). Tao continue korben?")) return;
+  }
   db.partnership.withdrawals=db.partnership.withdrawals||[];
   db.partnership.withdrawals.push({id:"wd"+Date.now(),name,date,amount,note});
   logActivity("Withdrawal: "+name+" "+fmt(amount));
@@ -3970,6 +4011,34 @@ async function deleteWithdrawal(id){
   if(!confirm("Delete this withdrawal entry?"))return;
   db.partnership.withdrawals=(db.partnership.withdrawals||[]).filter(x=>x.id!==id);
   logActivity("Withdrawal entry deleted"); await saveData(); renderWithdrawals(); renderPartnerCalc();
+}
+
+
+/* ---- Other (non-fee) income ---- */
+function renderOtherIncome(){
+  const box=document.getElementById("oi_list"); if(!box) return;
+  const items=(((db.partnership||{}).otherIncome)||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const total=items.reduce((a,x)=>a+Number(x.amount||0),0);
+  box.innerHTML=`<div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:5px">Date</th><th style="text-align:left;padding:5px">Source</th><th style="text-align:right;padding:5px">Amount</th><th class="no-print"></th></tr>
+  ${items.length?items.map(x=>`<tr><td style="padding:5px">${x.date||""}</td><td style="padding:5px">${admEsc(x.note||"")}</td><td style="padding:5px;text-align:right">${fmt(x.amount)}</td><td class="no-print" style="padding:5px"><button class="btn small danger" onclick="deleteOtherIncome('${x.id}')">✕</button></td></tr>`).join(""):`<tr><td colspan="4" style="padding:5px">No other income yet</td></tr>`}
+  <tr style="border-top:2px solid var(--line)"><td colspan="2" style="padding:6px"><b>Total Other Income</b></td><td style="padding:6px;text-align:right"><b>${fmt(total)}</b></td><td></td></tr></table></div>`;
+}
+async function addOtherIncome(){
+  const date=document.getElementById("oi_date").value;
+  const amount=Number(document.getElementById("oi_amount").value)||0;
+  const note=(document.getElementById("oi_note").value||"").trim();
+  if(amount<=0){alert("Enter a valid amount");return;}
+  db.partnership.otherIncome=db.partnership.otherIncome||[];
+  db.partnership.otherIncome.push({id:"oi"+Date.now(),date,amount,note});
+  logActivity("Other income added: "+fmt(amount));
+  await saveData();
+  document.getElementById("oi_amount").value=""; document.getElementById("oi_note").value="";
+  renderOtherIncome(); renderPartnerCalc();
+}
+async function deleteOtherIncome(id){
+  if(!confirm("Delete this income entry?"))return;
+  db.partnership.otherIncome=(db.partnership.otherIncome||[]).filter(x=>x.id!==id);
+  logActivity("Other income deleted"); await saveData(); renderOtherIncome(); renderPartnerCalc();
 }
 
 
