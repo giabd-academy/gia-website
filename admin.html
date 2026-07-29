@@ -572,8 +572,10 @@ tr:hover td{background:var(--cream)}
           <input type="hidden" id="ex_editing_id" value="">
           <div class="grid4">
             <div class="field"><label>Date</label><input type="date" id="ex_date"></div>
-            <div class="field"><label>Category</label><input id="ex_cat" list="expCatList" placeholder="Rent, Utilities, etc."></div>
-            <datalist id="expCatList"><option value="Rent"><option value="Salary"><option value="Utilities"><option value="Marketing"><option value="Study Materials"><option value="Furniture"><option value="Miscellaneous"><option value="Others"></datalist>
+            <div class="field"><label>Category</label>
+              <select id="ex_cat" onchange="ddOtherToggle(this,'ex_cat_other')"><option value="Rent">Rent</option><option value="Salary">Salary</option><option value="Utilities">Utilities</option><option value="Marketing">Marketing</option><option value="Study Materials">Study Materials</option><option value="Furniture">Furniture</option><option value="Miscellaneous">Miscellaneous</option><option value="Others">Others</option><option value="__other">Other (type)…</option></select>
+              <input id="ex_cat_other" class="hidden" placeholder="Type category" style="margin-top:6px">
+            </div>
             <div class="field"><label>Amount (৳)</label><input type="number" id="ex_amount"></div>
             <div class="field"><label>Notes</label><input id="ex_note"></div>
           </div>
@@ -1433,14 +1435,34 @@ function renderIncExpChart(){
   for(let i=5;i>=0;i--){ const dd=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({label:dd.toLocaleString('en',{month:'short'}),y:dd.getFullYear(),m:dd.getMonth()}); }
   const inc=months.map(mo=>{let sm=0; db.students.forEach(st=>(st.payments||[]).forEach(p=>{const d=new Date(p.date); if(d.getFullYear()===mo.y&&d.getMonth()===mo.m)sm+=Number(p.amount||0);})); return sm;});
   const exp=months.map(mo=>{let sm=0; (db.expenses||[]).forEach(e=>{const d=new Date(e.date); if(d.getFullYear()===mo.y&&d.getMonth()===mo.m)sm+=Number(e.amount||0);}); return sm;});
-  box.innerHTML=niceVBars(months.map(m=>m.label), inc, exp, "Income", "Expense");
+  const max=Math.max(...inc,...exp,1);
+  const w=560,h=170,plotH=h-46,groupW=w/months.length,bw=Math.min(20,groupW/2-6);
+  let bars="";
+  months.forEach((mo,i)=>{
+    const x=i*groupW+groupW/2;
+    const ih=Math.round(inc[i]/max*plotH), eh=Math.round(exp[i]/max*plotH);
+    bars+=`<rect x="${x-bw-2}" y="${h-24-ih}" width="${bw}" height="${ih}" rx="3" fill="#2e7d32"></rect>`;
+    bars+=`<rect x="${x+2}" y="${h-24-eh}" width="${bw}" height="${eh}" rx="3" fill="#C0392B"></rect>`;
+    bars+=`<text x="${x}" y="${h-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${mo.label}</text>`;
+  });
+  box.innerHTML=`<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${bars}<g font-size="11"><rect x="8" y="4" width="10" height="10" fill="#2e7d32"></rect><text x="22" y="13" fill="var(--muted)">Income</text><rect x="82" y="4" width="10" height="10" fill="#C0392B"></rect><text x="96" y="13" fill="var(--muted)">Expense</text></g></svg>`;
 }
 function renderCourseChart(){
   const box=document.getElementById("dashCourseChart"); if(!box) return;
   const counts={}; db.students.forEach(s=>{const c=s.course||"Other"; counts[c]=(counts[c]||0)+1;});
   const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,7);
   if(!entries.length){ box.innerHTML='<div class="note" style="color:var(--muted)">No students yet</div>'; return; }
-  box.innerHTML=niceHBar(entries.map(e=>({label:e[0], value:e[1]})), {raw:true});
+  const max=Math.max(...entries.map(e=>e[1]),1);
+  const rowH=26, w=560, h=entries.length*rowH+10, labelW=150, barMax=w-labelW-60;
+  const palette=["#1F3864","#C0392B","#E7B84B","#2e7d32","#6A4C93","#0E7C7B","#B5651D"];
+  let rows="";
+  entries.forEach((e,i)=>{
+    const y=i*rowH+8, bwid=Math.round(e[1]/max*barMax);
+    rows+=`<text x="0" y="${y+13}" font-size="12" fill="var(--ink)">${e[0].length>20?e[0].slice(0,19)+'…':e[0]}</text>`;
+    rows+=`<rect x="${labelW}" y="${y}" width="${bwid}" height="16" rx="3" fill="${palette[i%palette.length]}"></rect>`;
+    rows+=`<text x="${labelW+bwid+6}" y="${y+13}" font-size="12" font-weight="700" fill="var(--ink)">${e[1]}</text>`;
+  });
+  box.innerHTML=`<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${rows}</svg>`;
 }
 function renderDashDonuts(){
   const s=db.students;
@@ -1463,11 +1485,39 @@ function renderDashDonuts(){
   `;
 }
 function renderRevenueChart(){
-  const box=document.getElementById("revenueChart"); if(!box) return;
-  const now=new Date(); const months=[];
-  for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({label:d.toLocaleString('en',{month:'short'}),y:d.getFullYear(),m:d.getMonth()}); }
-  const totals=months.map(mo=>{let sm=0; db.students.forEach(st=>(st.payments||[]).forEach(p=>{const d=new Date(p.date); if(d.getFullYear()===mo.y&&d.getMonth()===mo.m)sm+=Number(p.amount||0);})); return sm;});
-  box.innerHTML=niceBars(months.map(m=>m.label), totals);
+  const months=[];
+  const now=new Date();
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push({label:d.toLocaleString('en',{month:'short'}), y:d.getFullYear(), m:d.getMonth()});
+  }
+  const totals=months.map(mo=>{
+    let sum=0;
+    db.students.forEach(st=>(st.payments||[]).forEach(p=>{
+      const d=new Date(p.date);
+      if(d.getFullYear()===mo.y && d.getMonth()===mo.m) sum+=Number(p.amount||0);
+    }));
+    return sum;
+  });
+  const max=Math.max(...totals, 1);
+  const w=560, h=140, barW=w/months.length-16, baseY=h-22;
+  let bars="";
+  months.forEach((mo,i)=>{
+    const barH = Math.round((totals[i]/max)*(h-46));
+    const x = i*(w/months.length)+8;
+    const y = baseY-barH;
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="url(#barGrad)"></rect>`;
+    bars += `<text x="${x+barW/2}" y="${baseY+16}" font-size="11" fill="var(--muted)" text-anchor="middle" font-family="Inter">${mo.label}</text>`;
+    bars += `<text x="${x+barW/2}" y="${y-6}" font-size="10" fill="var(--navy)" text-anchor="middle" font-family="Inter" font-weight="600">${totals[i]>=1000?Math.round(totals[i]/1000)+"k":totals[i]}</text>`;
+  });
+  document.getElementById("revenueChart").innerHTML = `
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;max-height:170px">
+      <defs><linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#C9455B"/><stop offset="100%" stop-color="#1F3864"/>
+      </linearGradient></defs>
+      <line x1="0" y1="${baseY}" x2="${w}" y2="${baseY}" stroke="var(--line)" stroke-width="1"/>
+      ${bars}
+    </svg>`;
 }
 
 /* ---------------- LEADS ---------------- */
@@ -2477,7 +2527,7 @@ function openExpenseForEdit(id){
   if(!e)return;
   document.getElementById("ex_editing_id").value=id;
   document.getElementById("ex_date").value=e.date;
-  document.getElementById("ex_cat").value=e.cat;
+  setExpCat(e.cat);
   document.getElementById("ex_amount").value=e.amount;
   document.getElementById("ex_note").value=e.note||"";
   document.getElementById("ex_receipt_status").textContent = e.receiptKey ? "Receipt attached ✓" : "No file attached";
@@ -2489,7 +2539,7 @@ function openExpenseForEdit(id){
 function cancelExpenseEdit(){
   document.getElementById("ex_editing_id").value="";
   document.getElementById("ex_date").value=new Date().toISOString().slice(0,10);
-  document.getElementById("ex_cat").value="Rent";
+  setExpCat("Rent");
   document.getElementById("ex_amount").value="";
   document.getElementById("ex_note").value="";
   document.getElementById("ex_receipt_status").textContent="No file attached";
@@ -2536,7 +2586,7 @@ async function viewExpenseReceipt(key){
 async function saveExpense(){
   const editingId=document.getElementById("ex_editing_id").value;
   const date=document.getElementById("ex_date").value;
-  const cat=document.getElementById("ex_cat").value;
+  const cat=ddValue("ex_cat","ex_cat_other");
   const amount=Number(document.getElementById("ex_amount").value);
   const note=document.getElementById("ex_note").value.trim();
   if(!amount||amount<=0){alert("Enter a valid amount");return;}
@@ -3468,7 +3518,27 @@ function renderPartners(){
      <div id="oi_list" style="margin-top:12px"></div>
    </div>
    <datalist id="partyNameList">${nameOpts}</datalist>
-   <div style="text-align:right;margin-top:14px"><button class="btn gold" onclick="printPartnerStatement()">🖨 Print Full Statement</button></div>`;
+   <div class="formCard" style="margin-top:16px">
+     <h4 style="color:var(--navy);margin:0 0 8px">🖨 Print / Export Statement</h4>
+     <div style="display:flex;gap:26px;flex-wrap:wrap">
+       <div><div style="font-weight:700;margin-bottom:4px">Data</div>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_summary" checked> Profit &amp; Loss summary</label>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_accounts" checked> Partner Capital Accounts</label>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_investments" checked> Investments</label>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_withdrawals" checked> Withdrawals</label>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_otherincome" checked> Other Income</label>
+       </div>
+       <div><div style="font-weight:700;margin-bottom:4px">Charts</div>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_donut" checked> Partner Total Value (donut)</label>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_incexp"> Income vs Expense</label>
+         <label style="display:block;margin:3px 0;font-weight:400"><input type="checkbox" id="ps_net"> Net Profit Trend</label>
+       </div>
+     </div>
+     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+       <button class="btn gold" onclick="buildPartnerStatement()">📄 Generate &amp; Print (selected)</button>
+       <button class="btn ghost" onclick="printPartnerStatement()">Print Everything</button>
+     </div>
+   </div>`;
   renderPartnerCalc();
   renderInvestments();
   renderWithdrawals();
@@ -3503,6 +3573,7 @@ function renderPartnerCalc(){
   const mk=partnerMonthKey(); window._ptMonth=mk;
   const acc=partnerCapitalAccounts();
   const f=acc.f;
+  const ms=partnerMonthlySeries();
   const monthLabel=mk?new Date(mk+"-01").toLocaleString('en',{month:'long',year:'numeric'}):"Selected month";
   const neg=v=>v<0?'color:#c00':'';
   const lossTag=v=>v<0?` <span style="color:#c00;font-size:.8rem">(Loss)</span>`:``;
@@ -3533,8 +3604,12 @@ function renderPartnerCalc(){
       ${acctRows}
       <tr style="border-top:2px solid var(--navy);background:var(--cream)"><td style="padding:6px"><b>Company (Retained)</b></td><td style="padding:6px;text-align:right">${acc.companyPct}%</td><td colspan="4" style="padding:6px;color:#777">25% of profit — stays in business to run it</td><td style="padding:6px;text-align:right;font-weight:700">${fmt(acc.companyRetained)}</td></tr>
     </table></div>
-    <h4 style="color:var(--navy);margin:14px 0 8px">Partner Total Value Chart</h4>
-    ${partnerBalanceChartSVG(acc.rows.map(a=>({name:a.name, balance:a.totalValue})))}`;
+    <h4 style="color:var(--navy);margin:14px 0 8px">Partner Total Value — Share</h4>
+    ${partnerBalanceChartSVG(acc.rows.map(a=>({name:a.name, balance:a.totalValue})))}
+    <h4 style="color:var(--navy);margin:16px 0 8px">Income vs Expense (6 Months)</h4>
+    <div style="max-width:500px">${niceVBars(ms.labels, ms.income, ms.expense, "Income", "Expense")}</div>
+    <h4 style="color:var(--navy);margin:16px 0 8px">Net Profit Trend (6 Months)</h4>
+    <div style="max-width:500px">${niceSignedBars(ms.labels, ms.net)}</div>`;
 }
 
 
@@ -3586,7 +3661,14 @@ function partnerShareChartSVG(allocs, net){
   return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${rows}</svg>`;
 }
 function printPartnerStatement(){
-  const p=db.partnership; const acc=partnerCapitalAccounts(); const f=acc.f;
+  buildPartnerStatement({summary:1,accounts:1,investments:1,withdrawals:1,otherincome:1,donut:1,incexp:1,net:1});
+}
+function buildPartnerStatement(sel){
+  if(!sel){
+    const g=id=>{const e=document.getElementById(id);return e?e.checked:false;};
+    sel={summary:g('ps_summary'),accounts:g('ps_accounts'),investments:g('ps_investments'),withdrawals:g('ps_withdrawals'),otherincome:g('ps_otherincome'),donut:g('ps_donut'),incexp:g('ps_incexp'),net:g('ps_net')};
+  }
+  const p=db.partnership; const acc=partnerCapitalAccounts(); const f=acc.f; const ms=partnerMonthlySeries();
   const mk=partnerMonthKey();
   const monthLabel=mk?new Date(mk+"-01").toLocaleString('en',{month:'long',year:'numeric'}):"Selected month";
   const a=db.agency;
@@ -3594,15 +3676,13 @@ function printPartnerStatement(){
   const totalWd=(p.withdrawals||[]).reduce((s,x)=>s+Number(x.amount||0),0);
   const companyCash=totalInv+f.netA-totalWd;
   const cell='border:1px solid #ccc;padding:5px';
-  const acctRows=acc.rows.map(a2=>`<tr><td style="${cell}">${admEsc(a2.name)}</td><td style="${cell};text-align:right">${a2.pct}%</td><td style="${cell};text-align:right">${fmt(a2.capital)}</td><td style="${cell};text-align:right">${fmt(a2.profitEarned)}</td><td style="${cell};text-align:right">${fmt(a2.withdrawn)}</td><td style="${cell};text-align:right">${fmt(a2.availableProfit)}</td><td style="${cell};text-align:right"><b>${fmt(a2.totalValue)}</b></td></tr>`).join("");
-  const invRows=(p.investments||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join("");
-  const wdRows=(p.withdrawals||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join("");
-  const oiRows=((p.otherIncome)||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.note||"")}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join("");
-  document.getElementById("partnerPrintBox").innerHTML=`
+  const g2=svg=>`<div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:6px 0">${svg}</div>`;
+  let html=`
     <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
     <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
-    <div style="text-align:right"><b>INVESTMENT &amp; PROFIT STATEMENT</b><br><span style="font-size:.8rem">${monthLabel}</span><br><span style="font-size:.7rem;color:#777">Confidential &bull; ${new Date().toISOString().slice(0,10)}</span></div></div>
-    <h3>Company Income &amp; Expense</h3>
+    <div style="text-align:right"><b>INVESTMENT &amp; PROFIT STATEMENT</b><br><span style="font-size:.8rem">${monthLabel}</span><br><span style="font-size:.7rem;color:#777">Confidential &bull; ${new Date().toISOString().slice(0,10)}</span></div></div>`;
+  if(sel.summary){
+    html+=`<h3>Company Income &amp; Expense</h3>
     <table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr><th style="${cell};text-align:left"></th><th style="${cell};text-align:right">${monthLabel}</th><th style="${cell};text-align:right">All-Time</th></tr>
       <tr><td style="${cell}">Student Fees</td><td style="${cell};text-align:right">${fmt(f.cM)}</td><td style="${cell};text-align:right">${fmt(f.cA)}</td></tr>
       <tr><td style="${cell}">Other Income</td><td style="${cell};text-align:right">${fmt(f.oM)}</td><td style="${cell};text-align:right">${fmt(f.oA)}</td></tr>
@@ -3613,18 +3693,30 @@ function printPartnerStatement(){
     <table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px">
       <tr><td style="${cell}">Capital Invested</td><td style="${cell};text-align:right">${fmt(totalInv)}</td><td style="${cell}">Company Retained (25%)</td><td style="${cell};text-align:right">${fmt(acc.companyRetained)}</td></tr>
       <tr><td style="${cell}"><b>Company Cash in Hand</b></td><td style="${cell};text-align:right"><b>${fmt(companyCash)}</b></td><td style="${cell}">Total Withdrawn</td><td style="${cell};text-align:right">${fmt(totalWd)}</td></tr>
-    </table>
-    <h3>Partner Accounts</h3>
-    <div style="font-size:.72rem;color:#666;margin-bottom:4px">Withdraw shudhu Profit theke; Capital ferot shudhu exit-e. Loss hole Capital kombe.</div>
-    <table style="width:100%;border-collapse:collapse;font-size:.8rem"><tr><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Share</th><th style="${cell};text-align:right">Capital</th><th style="${cell};text-align:right">Profit Earned</th><th style="${cell};text-align:right">Withdrawn</th><th style="${cell};text-align:right">Available</th><th style="${cell};text-align:right">Total Value</th></tr>${acctRows}
-      <tr style="background:#f0ece0"><td style="${cell}"><b>Company (Retained)</b></td><td style="${cell};text-align:right">${acc.companyPct}%</td><td colspan="4" style="${cell};color:#666">Stays in business</td><td style="${cell};text-align:right"><b>${fmt(acc.companyRetained)}</b></td></tr>
-    </table>
-    <div style="display:flex;gap:12px;margin-top:8px">
-      <div style="flex:1"><h3>Investments (${fmt(totalInv)})</h3><table style="width:100%;border-collapse:collapse;font-size:.76rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Investor</th><th style="${cell};text-align:right">Amount</th></tr>${invRows||`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table></div>
-      <div style="flex:1"><h3>Withdrawals (${fmt(totalWd)})</h3><table style="width:100%;border-collapse:collapse;font-size:.76rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Amount</th></tr>${wdRows||`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table></div>
-      <div style="flex:1"><h3>Other Income (${fmt(f.oA)})</h3><table style="width:100%;border-collapse:collapse;font-size:.76rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Source</th><th style="${cell};text-align:right">Amount</th></tr>${oiRows||`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table></div>
-    </div>
-    <div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
+    </table>`;
+  }
+  if(sel.accounts){
+    const acctRows=acc.rows.map(a2=>`<tr><td style="${cell}">${admEsc(a2.name)}</td><td style="${cell};text-align:right">${a2.pct}%</td><td style="${cell};text-align:right">${fmt(a2.capital)}</td><td style="${cell};text-align:right">${fmt(a2.profitEarned)}</td><td style="${cell};text-align:right">${fmt(a2.withdrawn)}</td><td style="${cell};text-align:right">${fmt(a2.availableProfit)}</td><td style="${cell};text-align:right"><b>${fmt(a2.totalValue)}</b></td></tr>`).join("");
+    html+=`<h3>Partner Accounts</h3><table style="width:100%;border-collapse:collapse;font-size:.8rem"><tr><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Share</th><th style="${cell};text-align:right">Capital</th><th style="${cell};text-align:right">Profit Earned</th><th style="${cell};text-align:right">Withdrawn</th><th style="${cell};text-align:right">Available</th><th style="${cell};text-align:right">Total Value</th></tr>${acctRows}
+      <tr style="background:#f0ece0"><td style="${cell}"><b>Company (Retained)</b></td><td style="${cell};text-align:right">${acc.companyPct}%</td><td colspan="4" style="${cell};color:#666">Stays in business</td><td style="${cell};text-align:right"><b>${fmt(acc.companyRetained)}</b></td></tr></table>`;
+  }
+  if(sel.donut) html+=`<h3>Partner Total Value — Share</h3>`+g2(partnerBalanceChartSVG(acc.rows.map(a2=>({name:a2.name, balance:a2.totalValue}))));
+  if(sel.incexp) html+=`<h3>Income vs Expense (6 Months)</h3>`+g2(niceVBars(ms.labels, ms.income, ms.expense, "Income", "Expense"));
+  if(sel.net) html+=`<h3>Net Profit Trend (6 Months)</h3>`+g2(niceSignedBars(ms.labels, ms.net));
+  if(sel.investments){
+    const invRows=(p.investments||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||"")}</td></tr>`).join("");
+    html+=`<h3>Investments (Total ${fmt(totalInv)})</h3><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Investor</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${invRows||`<tr><td colspan="4" style="${cell}">None</td></tr>`}</table>`;
+  }
+  if(sel.withdrawals){
+    const wdRows=(p.withdrawals||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.name)}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||"")}</td></tr>`).join("");
+    html+=`<h3>Withdrawals (Total ${fmt(totalWd)})</h3><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Partner</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${wdRows||`<tr><td colspan="4" style="${cell}">None</td></tr>`}</table>`;
+  }
+  if(sel.otherincome){
+    const oiRows=((p.otherIncome)||[]).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).map(x=>`<tr><td style="${cell}">${x.date||""}</td><td style="${cell}">${admEsc(x.note||"")}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join("");
+    html+=`<h3>Other Income (Total ${fmt(f.oA)})</h3><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:left">Source</th><th style="${cell};text-align:right">Amount</th></tr>${oiRows||`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table>`;
+  }
+  html+=`<div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
+  document.getElementById("partnerPrintBox").innerHTML=html;
   document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
   document.getElementById("sec-partnerprint").classList.add("active");
   logActivity("Printed investment & profit statement");
@@ -3920,7 +4012,27 @@ function partnerCapitalAccounts(){
   return {rows, companyPct, companyRetained, net, f};
 }
 function partnerBalanceChartSVG(accts){
-  return niceHBar((accts||[]).map(a=>({label:a.name, value:a.balance})));
+  return niceDonut((accts||[]).map(a=>({label:a.name, value:a.balance})));
+}
+function niceDonut(items){
+  items=items||[];
+  const anyNeg=items.some(i=>Number(i.value)<0);
+  const total=items.reduce((a,i)=>a+Math.max(0,Number(i.value)||0),0);
+  if(anyNeg || total<=0) return niceHBar(items);
+  const cx=72,cy=72,r=58,rin=34;
+  const palette=["#1F3864","#C0392B","#E7B84B","#2e7d32","#6A4C93","#0E7C7B","#B5651D"];
+  let a0=-Math.PI/2, arcs="";
+  items.forEach((it,i)=>{
+    const frac=(Number(it.value)||0)/total; if(frac<=0) return;
+    const a1=a0+frac*2*Math.PI;
+    const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    const xi1=cx+rin*Math.cos(a1), yi1=cy+rin*Math.sin(a1), xi0=cx+rin*Math.cos(a0), yi0=cy+rin*Math.sin(a0);
+    const large=frac>0.5?1:0;
+    arcs+=`<path d="M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L ${xi1.toFixed(2)} ${yi1.toFixed(2)} A ${rin} ${rin} 0 ${large} 0 ${xi0.toFixed(2)} ${yi0.toFixed(2)} Z" fill="${palette[i%palette.length]}"/>`;
+    a0=a1;
+  });
+  const legend=items.map((it,i)=>`<div style="display:flex;align-items:center;gap:6px;margin:2px 0;font-size:.8rem"><span style="width:11px;height:11px;border-radius:3px;background:${palette[i%palette.length]};display:inline-block;flex-shrink:0"></span><span>${admEsc(it.label)} — <b>${fmt(it.value)}</b> <span style="color:#888">(${Math.round((Number(it.value)||0)/total*100)}%)</span></span></div>`).join("");
+  return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><svg width="144" height="144" viewBox="0 0 144 144" style="flex-shrink:0">${arcs}<text x="72" y="68" text-anchor="middle" font-size="10" fill="#999">Total Value</text><text x="72" y="85" text-anchor="middle" font-size="13" font-weight="800" fill="#1F3864">${fmt(total)}</text></svg><div>${legend}</div></div>`;
 }
 function renderWithdrawals(){
   const box=document.getElementById("wd_list"); if(!box) return;
@@ -4070,7 +4182,7 @@ function showPartnerHistory(name){
   const tbl=(rowsArr)=>`<div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:4px">Date</th><th style="text-align:right;padding:4px">Amount</th><th style="text-align:left;padding:4px">Note</th></tr>${rowsArr.length?rowsArr.map(x=>`<tr><td style="padding:4px">${x.date||''}</td><td style="padding:4px;text-align:right">${fmt(x.amount)}</td><td style="padding:4px">${admEsc(x.note||'')}</td></tr>`).join(''):`<tr><td colspan="3" style="padding:4px">None</td></tr>`}</table></div>`;
   box.innerHTML=`
    <div class="formCard" style="border:2px solid var(--navy)">
-     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><h3 style="margin:0">👤 ${admEsc(name)} — Account History</h3><button class="btn ghost small" onclick="document.getElementById('partnerDetail').innerHTML=''">✕ Close</button></div>
+     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><h3 style="margin:0">👤 ${admEsc(name)} — Account History</h3><div style="display:flex;gap:6px"><button class="btn small gold" onclick="printPartnerHistory(decodeURIComponent('${encodeURIComponent(name)}'))">🖨 Print</button><button class="btn ghost small" onclick="document.getElementById('partnerDetail').innerHTML=''">✕ Close</button></div></div>
      <div class="cards" style="margin:10px 0">
        <div class="card"><h3>Capital</h3><div class="num" style="${neg(cap)}">${fmt(cap)}</div></div>
        <div class="card"><h3>Profit Earned</h3><div class="num">${fmt(pe)}</div></div>
@@ -4084,6 +4196,79 @@ function showPartnerHistory(name){
      <div style="font-size:.82rem;color:#555;margin-top:8px">Available Profit (tola jabe): <b>${fmt(av)}</b>. Capital ferot shudhu exit-e.</div>
    </div>`;
   if(box.scrollIntoView) box.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+
+/* ---- extra partner charts ---- */
+function partnerMonthlySeries(){
+  const now=new Date(); const labels=[], income=[], expense=[], net=[];
+  for(let i=5;i>=0;i--){
+    const dd=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const mk=dd.getFullYear()+"-"+String(dd.getMonth()+1).padStart(2,"0");
+    const ff=partnerFinance(mk);
+    labels.push(dd.toLocaleString('en',{month:'short'}));
+    income.push(ff.incM); expense.push(ff.eM); net.push(ff.netM);
+  }
+  return {labels, income, expense, net};
+}
+function niceSignedBars(labels, values){
+  const w=600,h=190,padL=46,padR=12,padT=16,padB=28;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const max=Math.max(1,...values.map(v=>Math.abs(v)));
+  const zeroY=padT+plotH/2;
+  let out=`<line x1="${padL}" y1="${zeroY}" x2="${w-padR}" y2="${zeroY}" stroke="#ccc"/>`;
+  const gw=plotW/labels.length, bw=Math.min(34,gw-16);
+  labels.forEach((lb,i)=>{
+    const gx=padL+i*gw+gw/2;
+    const v=values[i]||0;
+    const bh=Math.round(Math.abs(v)/max*(plotH/2));
+    const pos=v>=0; const y=pos?zeroY-bh:zeroY;
+    out+=`<rect x="${gx-bw/2}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${pos?'#2e7d32':'#C0392B'}"/>`;
+    out+=`<text x="${gx}" y="${h-9}" text-anchor="middle" font-size="11" fill="#888">${lb}</text>`;
+    const lbl=Math.abs(v)>=1000?Math.round(v/1000)+'k':v;
+    out+=`<text x="${gx}" y="${pos?y-4:y+bh+11}" text-anchor="middle" font-size="9" fill="#666">${lbl}</text>`;
+  });
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${out}</svg>`;
+}
+
+
+/* ---- Print a single partner's history statement ---- */
+function printPartnerHistory(name){
+  const acc=partnerCapitalAccounts();
+  const row=acc.rows.find(r=>r.name===name);
+  const invs=(db.partnership.investments||[]).filter(x=>x.name===name).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const wds=(db.partnership.withdrawals||[]).filter(x=>x.name===name).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const a=db.agency; const cell='border:1px solid #ccc;padding:5px';
+  const cap=row?row.capital:0, pe=row?row.profitEarned:0, wd=row?row.withdrawn:0, av=row?row.availableProfit:0, tv=row?row.totalValue:0, pct=row?row.pct:0;
+  const tot=(arr)=>arr.reduce((s,x)=>s+Number(x.amount||0),0);
+  document.getElementById("partnerPrintBox").innerHTML=`
+    <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
+    <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
+    <div style="text-align:right"><b>PARTNER STATEMENT</b><br><span style="font-size:.8rem">${admEsc(name)}</span><br><span style="font-size:.7rem;color:#777">Confidential &bull; ${new Date().toISOString().slice(0,10)}</span></div></div>
+    <h3>Account Summary — ${admEsc(name)} (${pct}% share)</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <tr><td style="${cell}">Capital (Invested)</td><td style="${cell};text-align:right">${fmt(cap)}</td><td style="${cell}">Profit Earned</td><td style="${cell};text-align:right">${fmt(pe)}</td></tr>
+      <tr><td style="${cell}">Withdrawn</td><td style="${cell};text-align:right">${fmt(wd)}</td><td style="${cell}">Available Profit</td><td style="${cell};text-align:right">${fmt(av)}</td></tr>
+      <tr><td style="${cell}"><b>Total Value</b></td><td style="${cell};text-align:right" colspan="3"><b>${fmt(tv)}</b></td></tr>
+    </table>
+    <h3>Investments (Total ${fmt(tot(invs))})</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:.8rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${invs.length?invs.map(x=>`<tr><td style="${cell}">${x.date||''}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||'')}</td></tr>`).join(''):`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table>
+    <h3>Withdrawals (Total ${fmt(tot(wds))})</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:.8rem"><tr><th style="${cell};text-align:left">Date</th><th style="${cell};text-align:right">Amount</th><th style="${cell};text-align:left">Note</th></tr>${wds.length?wds.map(x=>`<tr><td style="${cell}">${x.date||''}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td><td style="${cell}">${admEsc(x.note||'')}</td></tr>`).join(''):`<tr><td colspan="3" style="${cell}">None</td></tr>`}</table>
+    <div class="signrow"><span>${admEsc(name)}</span><span>Authorized</span></div>`;
+  document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+  document.getElementById("sec-partnerprint").classList.add("active");
+  logActivity("Printed partner statement: "+name);
+}
+
+
+function setExpCat(val){
+  const sel=document.getElementById("ex_cat"); const oth=document.getElementById("ex_cat_other");
+  if(!sel) return;
+  const opts=Array.from(sel.options).map(o=>o.value);
+  if(val && opts.indexOf(val)!==-1 && val!=="__other"){ sel.value=val; if(oth){ oth.value=""; oth.classList.add("hidden"); } }
+  else if(val){ sel.value="__other"; if(oth){ oth.value=val; oth.classList.remove("hidden"); } }
+  else { sel.value=""; if(oth){ oth.value=""; oth.classList.add("hidden"); } }
 }
 
 
