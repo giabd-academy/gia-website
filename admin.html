@@ -189,7 +189,7 @@ tr:hover td{background:var(--cream)}
   #sec-admprint .rhead{margin-bottom:6px}
 }
 .receiptPaper,.reportPaper{position:relative;overflow:hidden}
-.paperWatermark{position:absolute;top:50%;left:50%;width:70%;padding-bottom:70%;transform:translate(-50%,-50%);background-size:contain;background-position:center;background-repeat:no-repeat;opacity:.05;pointer-events:none;z-index:0}
+.paperWatermark{position:absolute;top:50%;left:50%;width:70%;padding-bottom:70%;transform:translate(-50%,-50%);background-size:contain;background-position:center;background-repeat:no-repeat;opacity:.06;pointer-events:none;z-index:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .receiptPaper > *:not(.paperWatermark),.reportPaper > *:not(.paperWatermark){position:relative;z-index:1}
 
 /* ---- Login screen: scenic Japan-inspired backdrop + glassmorphism (placed last to win cascade) ---- */
@@ -929,6 +929,70 @@ tr:hover td{background:var(--cream)}
         </div>
       </section>
 
+      <!-- STUDENT PROFILE (drill-down) -->
+      <section class="section" id="sec-studentprofile"><div id="studentProfileBox"></div></section>
+      <!-- STUDENT PRINT VIEW -->
+      <section class="section printme" id="sec-studentprint">
+        <div class="reportPaper" id="studentPrintBox"></div>
+        <div style="text-align:center;margin-top:14px" class="no-print">
+          <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+          <button class="btn ghost" onclick="show('students')">← Back</button>
+        </div>
+      </section>
+
+      <!-- SALARY / PAYROLL -->
+      <section class="section" id="sec-salary">
+        <div class="panelTitle"><h2>Salary / Payroll</h2><span id="salarySummary" class="s"></span></div>
+        <div class="formCard">
+          <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="field"><label>Payroll Month</label><input type="month" id="pr_month" onchange="renderSalary()"></div>
+            <button class="btn gold" onclick="generatePayroll()">⚙ Generate Payroll (active staff)</button>
+          </div>
+          <div id="payrollBody" style="margin-top:12px"></div>
+        </div>
+        <div class="formCard" style="margin-top:16px">
+          <h3 style="margin-top:0">Staff Setup</h3>
+          <div class="grid3">
+            <div class="field"><label>Name</label><input id="st_name"></div>
+            <div class="field"><label>Role / Designation</label><input id="st_role"></div>
+            <div class="field"><label>Monthly Salary</label><input type="number" id="st_salary"></div>
+            <div class="field"><label>Phone</label><input id="st_phone"></div>
+            <div class="field"><label>Join Date</label><input type="date" id="st_join"></div>
+          </div>
+          <div style="margin-top:8px"><button class="btn" onclick="addStaff()">＋ Add / Save Staff</button> <span id="st_edit_note" style="color:var(--muted);font-size:.85rem"></span></div>
+          <div id="staffListBody" style="margin-top:12px"></div>
+        </div>
+        <div id="staffHistoryBox"></div>
+      </section>
+
+      <!-- PAYSLIP PRINT -->
+      <section class="section printme" id="sec-salaryprint">
+        <div class="reportPaper" id="salaryPrintBox"></div>
+        <div style="text-align:center;margin-top:14px" class="no-print"><button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button><button class="btn ghost" onclick="show('salary')">← Back</button></div>
+      </section>
+
+      <!-- COMPANY DUES / PAYABLES -->
+      <section class="section" id="sec-payables">
+        <div class="panelTitle"><h2>Company Dues (Payables)</h2><span id="payablesSummary" class="s"></span></div>
+        <div class="formCard">
+          <h3 style="margin-top:0">Add Other Payable (rent, bill, loan etc.)</h3>
+          <div class="grid3">
+            <div class="field"><label>Title</label><input id="pay_title" placeholder="e.g. Office Rent"></div>
+            <div class="field"><label>Amount</label><input type="number" id="pay_amt" placeholder="0"></div>
+            <div class="field"><label>Due Date</label><input type="date" id="pay_due"></div>
+            <div class="field"><label>Note</label><input id="pay_note2"></div>
+          </div>
+          <div style="margin-top:8px"><button class="btn" onclick="addPayable()">＋ Add Payable</button></div>
+        </div>
+        <div id="payablesBody" style="margin-top:14px"></div>
+      </section>
+
+      <!-- COMPANY DUES PRINT -->
+      <section class="section printme" id="sec-payablesprint">
+        <div class="reportPaper" id="payablesPrintBox"></div>
+        <div style="text-align:center;margin-top:14px" class="no-print"><button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button><button class="btn ghost" onclick="show('payables')">← Back</button></div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -1029,7 +1093,7 @@ function startFirebaseSync(){
       const incoming = JSON.parse(docSnap.data().value);
       if(!incoming || !Array.isArray(incoming.students) || !Array.isArray(incoming.users)) return;
       db = incoming;
-      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
+      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
       const activeSection=document.querySelector(".section.active");
       if(activeSection){ const activeId=activeSection.id.replace("sec-",""); show(activeId); }
     }catch(e){ console.error("Sync parse failed", e); }
@@ -1057,7 +1121,7 @@ async function loadData(){
   try{
     const res = await storageAdapter.get(STORAGE_KEY, true);
     db = JSON.parse(res.value);
-    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[];
+    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[];
     db.students.forEach(s=>{s.documents=s.documents||{}; s.installments=s.installments||[];});
     let _mig=false;
     (db.users||[]).forEach(u=>{
@@ -1085,7 +1149,7 @@ async function loadData(){
         try{
           const res2 = await storageAdapter.get(STORAGE_KEY, true);
           db = JSON.parse(res2.value);
-          db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
+          db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
           (db.students||[]).forEach(s=>{s.documents=s.documents||{}; s.installments=s.installments||[];});
           recovered=true;
         }catch(e2){
@@ -1109,7 +1173,7 @@ function defaultData(){
   return {
     agency:{name:"Galaxy International Academy", address:"REVCON NURHEIGHTS, Plot #04, Block-L, Agrabad Access Road, Chattogram (Opposite City Hall)", phone:"+8801830150171", email:"giabd.official@gmail.com", website:"giabd.com"},
     users:[{id:"u1", username:"admin", password:"admin123", name:"MD SHARIF BHUYAN", role:"Cofounder"}],
-    students:[], leads:[], classes:[], expenses:[], attendance:[], activityLog:[], schools:[], tasks:[], calendarEvents:[], applications:[], admApps:[], commissions:[], communications:[],
+    students:[], leads:[], classes:[], expenses:[], attendance:[], activityLog:[], schools:[], tasks:[], calendarEvents:[], applications:[], admApps:[], commissions:[], communications:[], salaries:[], payables:[], staff:[],
     nextNum:1
   };
 }
@@ -1241,6 +1305,8 @@ const NAV=[
   {id:"visa",en:"Visa Tracking",bn:"ভিসা"},
   {id:"dues",en:"Dues / Outstanding",bn:"বকেয়া"},
   {id:"commission",en:"Commission",bn:"কমিশন"},
+  {id:"salary",en:"Salary",bn:"বেতন"},
+  {id:"payables",en:"Company Dues",bn:"কোম্পানি বকেয়া"},
   {id:"partners",en:"Investment & Profit",bn:"বিনিয়োগ ও লাভ"},
   {id:"communications",en:"Communication Log",bn:"যোগাযোগ"},
   {id:"reports",en:"Reports",bn:"রিপোর্ট"},
@@ -1329,6 +1395,8 @@ function show(id){
   if(id==="visa")renderVisa();
   if(id==="dues")renderDues();
   if(id==="commission")renderCommission();
+  if(id==="salary")renderSalary();
+  if(id==="payables")renderPayables();
   if(id==="partners")renderPartners();
   if(id==="communications")renderCommunications();
   if(id==="settings")renderSettings();
@@ -1646,7 +1714,7 @@ function renderStudents(){
     <tr>
       <td>${s.sid}</td>
       <td><div class="avatarThumb" id="avatar_${s.id}">${s.name.charAt(0).toUpperCase()}</div></td>
-      <td>${s.name}</td><td>${s.phone||"—"}</td><td>${s.course||"—"} / ${s.batch||"—"}</td>
+      <td><a href="#" onclick="showStudentProfile('${s.id}');return false" style="color:var(--navy);font-weight:600;cursor:pointer;text-decoration:underline">${s.name}</a></td><td>${s.phone||"—"}</td><td>${s.course||"—"} / ${s.batch||"—"}</td>
       <td>${fmt(s.totalFee, s.currency)}</td><td>${fmt(studentPaid(s), s.currency)}</td><td>${fmt(studentDue(s), s.currency)}</td>
       <td><span class="badge ${badgeClass(s.follow)}">${s.follow||"—"}</span></td>
       <td><a href="#" onclick="show('documents');setTimeout(()=>{document.getElementById('doc_student').value='${s.id}';renderDocChecklist();},50);return false;" style="text-decoration:none;font-size:.78rem;font-weight:700;color:var(--navy)">${docCountCollected(s)}/${DOC_TYPES.length}</a></td>
@@ -3227,7 +3295,7 @@ function importBackup(evt){
       const parsed=JSON.parse(e.target.result);
       if(!parsed.students || !parsed.users){alert("File is not in the correct format");return;}
       db=parsed;
-      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[];
+      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[];
       await saveData();
       alert("Data restored successfully");
       show("dashboard");
@@ -3353,7 +3421,7 @@ async function uploadAdmPhoto(inputEl){
 async function saveAdmApp(alsoPrint){
   const name=admG("ad_name").trim();
   if(!name){alert("Full Name is required");return;}
-  db.admApps=db.admApps||[];
+  db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[];
   const edu={};
   ["ssc","hsc","bachelor","others"].forEach(k=>{ edu[k]={inst:admG("ad_edu_"+k+"_inst").trim(),board:admG("ad_edu_"+k+"_board").trim(),year:admG("ad_edu_"+k+"_year").trim(),result:admG("ad_edu_"+k+"_result").trim()}; });
   const programs=ADM_PROGRAMS.filter((p,i)=>admChk("ad_prog_"+i));
@@ -3560,6 +3628,7 @@ function partnerFinance(monthKey){
   (((db.partnership||{}).otherIncome)||[]).forEach(x=>{ const amt=Number(x.amount||0); oA+=amt; if((x.date||"").slice(0,7)===monthKey)oM+=amt; });
   let eM=0,eA=0;
   (db.expenses||[]).forEach(e=>{ const amt=Number(e.amount||0); eA+=amt; if((e.date||"").slice(0,7)===monthKey)eM+=amt; });
+  (db.salaries||[]).forEach(x=>{ if(x.status==="Paid"){ const amt=salNet(x); eA+=amt; const mkey=(x.month||x.datePaid||"").slice(0,7); if(mkey===monthKey)eM+=amt; } });
   const incM=cM+oM, incA=cA+oA;
   return {cM,cA,oM,oA,incM,incA,eM,eA,netM:incM-eM,netA:incA-eA};
 }
@@ -3832,7 +3901,7 @@ async function restoreAutoSnap(key, date){
     const parsed=JSON.parse(res.value);
     if(!parsed || !parsed.students || !parsed.users){alert("That backup is empty or invalid");return;}
     db=parsed;
-    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.autoSnapIndex=db.autoSnapIndex||[];
+    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.autoSnapIndex=db.autoSnapIndex||[];
     logActivity("Restored from automatic backup: "+date);
     await saveData();
     alert("Data restored from "+date);
@@ -4272,7 +4341,309 @@ function setExpCat(val){
 }
 
 
-loadData();
+/* ---- Student profile drill-down + separate prints ---- */
+function _stuInfoHTML(s){
+  const rows=[['Student ID',s.sid],['Full Name',s.name],['Phone',s.phone],['Email',s.email],['Passport',s.passport],['Course',s.course],['Batch',s.batch],['Level',s.level],['Lead Source',s.source],['Enroll Date',s.enrollDate],['JLPT',s.jlpt],['Visa',s.visa],['Visa / Interview Date',s.visaInterviewDate],['Application',s.app],['Documents',s.docs],['Follow-up',s.follow],['Total Fee',fmt(s.totalFee,s.currency)],['Notes',s.notes]];
+  return `<table style="width:100%;border-collapse:collapse;font-size:.85rem">${rows.map(r=>`<tr><td style="border:1px solid #eee;padding:5px;font-weight:600;width:38%">${r[0]}</td><td style="border:1px solid #eee;padding:5px">${admEsc(r[1]||'—')}</td></tr>`).join('')}</table>`;
+}
+function _stuPaymentsHTML(s){
+  const ps=(s.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const rows=ps.map(p=>`<tr><td style="border:1px solid #eee;padding:5px">${p.date||''}</td><td style="border:1px solid #eee;padding:5px">${admEsc(p.receiptNo||'')}</td><td style="border:1px solid #eee;padding:5px">${admEsc(p.method||'')}</td><td style="border:1px solid #eee;padding:5px;text-align:right">${fmt(p.amount,s.currency)}</td><td style="border:1px solid #eee;padding:5px">${admEsc(p.note||'')}</td></tr>`).join('');
+  return `<table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr><th style="border:1px solid #eee;padding:5px;text-align:left">Date</th><th style="border:1px solid #eee;padding:5px;text-align:left">Receipt No</th><th style="border:1px solid #eee;padding:5px;text-align:left">Method</th><th style="border:1px solid #eee;padding:5px;text-align:right">Amount</th><th style="border:1px solid #eee;padding:5px;text-align:left">Note</th></tr>${rows||`<tr><td colspan="5" style="border:1px solid #eee;padding:5px">No payments yet</td></tr>`}
+  <tr style="background:#f7f4ec"><td colspan="3" style="border:1px solid #eee;padding:6px"><b>Total Fee / Paid / Due</b></td><td colspan="2" style="border:1px solid #eee;padding:6px;text-align:right"><b>${fmt(s.totalFee,s.currency)} / ${fmt(studentPaid(s),s.currency)} / ${fmt(studentDue(s),s.currency)}</b></td></tr></table>`;
+}
+function _stuAttendanceHTML(s){
+  const recs=(db.attendance||[]).filter(a=>a.studentId===s.id).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const pr=recs.filter(a=>a.status==='Present').length, ab=recs.filter(a=>a.status==='Absent').length, la=recs.filter(a=>a.status==='Late').length, tot=recs.length;
+  const pct=tot?Math.round(((pr+la*0.5)/tot)*100):0;
+  const rows=recs.map(a=>`<tr><td style="border:1px solid #eee;padding:5px">${a.date||''}</td><td style="border:1px solid #eee;padding:5px">${admEsc(a.batch||'')}</td><td style="border:1px solid #eee;padding:5px">${admEsc(a.status||'')}</td></tr>`).join('');
+  return `<div style="margin-bottom:6px;font-size:.85rem">Present: <b>${pr}</b> &middot; Absent: <b>${ab}</b> &middot; Late: <b>${la}</b> &middot; Total: <b>${tot}</b> &middot; Attendance: <b>${tot?pct+'%':'—'}</b></div>
+  <table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr><th style="border:1px solid #eee;padding:5px;text-align:left">Date</th><th style="border:1px solid #eee;padding:5px;text-align:left">Batch</th><th style="border:1px solid #eee;padding:5px;text-align:left">Status</th></tr>${rows||`<tr><td colspan="3" style="border:1px solid #eee;padding:5px">No attendance records</td></tr>`}</table>`;
+}
+function showStudentProfile(id){
+  const s=db.students.find(x=>x.id===id); if(!s) return;
+  document.getElementById("studentProfileBox").innerHTML=`
+    <div class="panelTitle"><h2>${admEsc(s.name)} <span style="color:var(--sakura);font-size:.9rem">${s.sid||''}</span></h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn small" style="background:var(--navy)" onclick="showStudentQR('${id}')">📱 Portal QR</button>
+        <button class="btn gold small" onclick="printStudentDoc('${id}','all')">🖨 Print All</button>
+        <button class="btn ghost small" onclick="show('students')">← Back</button>
+      </div></div>
+    <div id="studentQRBox"></div>
+    <div class="formCard"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><h3 style="margin:0">Information</h3><button class="btn small" onclick="printStudentDoc('${id}','info')">🖨 Print Info</button></div>${_stuInfoHTML(s)}</div>
+    <div class="formCard" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><h3 style="margin:0">Payment Details</h3><button class="btn small" onclick="printStudentDoc('${id}','payments')">🖨 Print Payments</button></div>${_stuPaymentsHTML(s)}</div>
+    <div class="formCard" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><h3 style="margin:0">Attendance</h3><button class="btn small" onclick="printStudentDoc('${id}','attendance')">🖨 Print Attendance</button></div>${_stuAttendanceHTML(s)}</div>`;
+  document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+  document.getElementById("sec-studentprofile").classList.add("active");
+}
+function printStudentDoc(id, type){
+  const s=db.students.find(x=>x.id===id); if(!s) return;
+  const a=db.agency;
+  const head=(title)=>`<div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
+    <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
+    <div style="text-align:right"><b>${title}</b><br><span style="font-size:.8rem">${admEsc(s.name)} — ${s.sid||''}</span><br><span style="font-size:.7rem;color:#777">${new Date().toISOString().slice(0,10)}</span></div></div>`;
+  let body='';
+  if(type==='info'){ body=head('STUDENT INFORMATION')+`<h3>Information</h3>`+_stuInfoHTML(s); }
+  else if(type==='payments'){ body=head('PAYMENT STATEMENT')+`<h3>Payment Details</h3>`+_stuPaymentsHTML(s); }
+  else if(type==='attendance'){ body=head('ATTENDANCE REPORT')+`<h3>Attendance</h3>`+_stuAttendanceHTML(s); }
+  else { body=head('STUDENT PROFILE')+`<h3>Information</h3>`+_stuInfoHTML(s)+`<h3 style="margin-top:12px">Payment Details</h3>`+_stuPaymentsHTML(s)+`<h3 style="margin-top:12px">Attendance</h3>`+_stuAttendanceHTML(s); }
+  body+=`<div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
+  document.getElementById("studentPrintBox").innerHTML=body;
+  document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+  document.getElementById("sec-studentprint").classList.add("active");
+  logActivity("Printed student "+type+": "+s.name);
+}
+
+
+/* ---- Salary / Payroll ---- */
+function salNet(r){ return (r.base!=null?Number(r.base||0):Number(r.amount||0)) + Number(r.allowance||0) - Number(r.deduction||0); }
+let _stEditId=null;
+function renderSalary(){
+  const mEl=document.getElementById("pr_month"); if(mEl && !mEl.value) mEl.value=new Date().toISOString().slice(0,7);
+  const month=mEl?mEl.value:"";
+  db.staff=db.staff||[]; db.salaries=db.salaries||[];
+  const sb=document.getElementById("staffListBody");
+  if(sb){ sb.innerHTML=`<div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:5px">Name</th><th style="text-align:left;padding:5px">Role</th><th style="text-align:right;padding:5px">Monthly</th><th style="padding:5px">Status</th><th class="no-print"></th></tr>${db.staff.length?db.staff.map(st=>`<tr><td style="padding:5px"><a href="#" onclick="showStaffHistory('${st.id}');return false" style="color:var(--navy);font-weight:600;text-decoration:underline;cursor:pointer">${admEsc(st.name)}</a></td><td style="padding:5px">${admEsc(st.role||"")}</td><td style="padding:5px;text-align:right">${fmt(st.monthlySalary)}</td><td style="padding:5px;text-align:center"><span class="badge" style="background:${st.active!==false?'var(--good)':'#999'};color:#fff">${st.active!==false?'Active':'Inactive'}</span></td><td class="no-print" style="padding:5px"><button class="btn small" onclick="editStaff('${st.id}')">Edit</button> <button class="btn small ghost" onclick="toggleStaffActive('${st.id}')">${st.active!==false?'Off':'On'}</button> ${canDelete()?`<button class="btn small danger" onclick="deleteStaff('${st.id}')">Del</button>`:''}</td></tr>`).join(""):`<tr><td colspan="5" style="padding:5px">No staff yet — add below</td></tr>`}</table></div>`; }
+  const recs=db.salaries.filter(x=>x.month===month);
+  const pb=document.getElementById("payrollBody");
+  if(pb){ pb.innerHTML= recs.length? `<div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:5px">Staff</th><th style="text-align:right;padding:5px">Base</th><th style="text-align:right;padding:5px">Allowance</th><th style="text-align:right;padding:5px">Deduction</th><th style="text-align:right;padding:5px">Net</th><th style="padding:5px">Status</th><th class="no-print"></th></tr>${recs.map(r=>`<tr><td style="padding:5px">${admEsc(r.name)}</td><td style="padding:5px;text-align:right">${fmt(r.base!=null?r.base:r.amount)}</td><td style="padding:5px;text-align:right"><input type="number" value="${r.allowance||0}" onchange="updateSalaryRow('${r.id}','allowance',this.value)" style="width:88px;text-align:right"></td><td style="padding:5px;text-align:right"><input type="number" value="${r.deduction||0}" onchange="updateSalaryRow('${r.id}','deduction',this.value)" style="width:88px;text-align:right"></td><td style="padding:5px;text-align:right;font-weight:700">${fmt(salNet(r))}</td><td style="padding:5px;text-align:center"><span class="badge" style="background:${r.status==='Paid'?'var(--good)':'var(--bad)'};color:#fff">${r.status}</span></td><td class="no-print" style="padding:5px"><button class="btn small" onclick="toggleSalaryPaid('${r.id}')">${r.status==='Paid'?'Mark Due':'Mark Paid'}</button> <button class="btn small gold" onclick="printPayslip('${r.id}')">Payslip</button> ${canDelete()?`<button class="btn small danger" onclick="deleteSalary('${r.id}')">✕</button>`:''}</td></tr>`).join("")}</table></div>` : `<div class="note" style="color:var(--muted)">Ei maaser payroll nei. "Generate Payroll" click korun (active staff theke), ba age Staff Setup-e staff add korun.</div>`; }
+  const totNet=recs.reduce((s,r)=>s+salNet(r),0);
+  const paid=recs.filter(r=>r.status==='Paid').reduce((s,r)=>s+salNet(r),0);
+  const sum=document.getElementById("salarySummary"); if(sum) sum.innerHTML=`${month}: Payroll <b>${fmt(totNet)}</b> &middot; Paid <b style="color:var(--good)">${fmt(paid)}</b> &middot; Due <b style="color:var(--bad)">${fmt(totNet-paid)}</b>`;
+}
+function generatePayroll(){
+  const month=document.getElementById("pr_month").value; if(!month){alert("Select a month");return;}
+  db.staff=db.staff||[]; db.salaries=db.salaries||[];
+  const active=db.staff.filter(s=>s.active!==false);
+  if(!active.length){alert("No active staff. Age Staff Setup-e staff add korun.");return;}
+  let added=0;
+  active.forEach(s=>{
+    if(db.salaries.some(x=>x.month===month && x.staffId===s.id)) return;
+    db.salaries.push({id:"sl"+Date.now()+Math.floor(Math.random()*1000),staffId:s.id,name:s.name,role:s.role||"",month,base:Number(s.monthlySalary||0),allowance:0,deduction:0,status:"Due",datePaid:"",method:"",note:""});
+    added++;
+  });
+  logActivity("Payroll generated for "+month+" ("+added+" staff)");
+  saveData(); renderSalary();
+  alert(added+" salary record generate holo ("+month+"). Baki gula age theke chilo.");
+}
+async function updateSalaryRow(id, field, val){
+  const r=(db.salaries||[]).find(x=>x.id===id); if(!r)return;
+  r[field]=Number(val)||0; await saveData(); renderSalary();
+}
+async function toggleSalaryPaid(id){
+  const x=(db.salaries||[]).find(y=>y.id===id); if(!x)return;
+  if(x.status==="Paid"){ x.status="Due"; x.datePaid=""; } else { x.status="Paid"; x.datePaid=new Date().toISOString().slice(0,10); }
+  logActivity("Salary "+x.status+": "+x.name); await saveData(); renderSalary();
+}
+async function deleteSalary(id){
+  if(!requireDelete())return;
+  if(!confirm("Delete this salary record?"))return;
+  db.salaries=(db.salaries||[]).filter(y=>y.id!==id); await saveData(); renderSalary();
+}
+function addStaff(){
+  const g=id=>document.getElementById(id).value;
+  const name=g("st_name").trim(); if(!name){alert("Enter staff name");return;}
+  const sal=Number(g("st_salary"))||0;
+  db.staff=db.staff||[];
+  if(_stEditId){ const s=db.staff.find(x=>x.id===_stEditId); if(s){ Object.assign(s,{name,role:g("st_role").trim(),monthlySalary:sal,phone:g("st_phone").trim(),joinDate:g("st_join")}); } _stEditId=null; const en=document.getElementById("st_edit_note"); if(en)en.textContent=""; }
+  else { db.staff.push({id:"stf"+Date.now(),name,role:g("st_role").trim(),monthlySalary:sal,phone:g("st_phone").trim(),joinDate:g("st_join"),active:true}); }
+  logActivity("Staff saved: "+name); saveData();
+  ["st_name","st_role","st_salary","st_phone","st_join"].forEach(id=>document.getElementById(id).value="");
+  renderSalary();
+}
+function editStaff(id){
+  const s=(db.staff||[]).find(x=>x.id===id); if(!s)return;
+  _stEditId=id;
+  document.getElementById("st_name").value=s.name||"";
+  document.getElementById("st_role").value=s.role||"";
+  document.getElementById("st_salary").value=s.monthlySalary||"";
+  document.getElementById("st_phone").value=s.phone||"";
+  document.getElementById("st_join").value=s.joinDate||"";
+  const en=document.getElementById("st_edit_note"); if(en)en.textContent="Editing "+s.name+" — 'Add / Save Staff' e click korun";
+}
+function toggleStaffActive(id){ const s=(db.staff||[]).find(x=>x.id===id); if(!s)return; s.active=(s.active===false); saveData(); renderSalary(); }
+function deleteStaff(id){ if(!requireDelete())return; if(!confirm("Delete this staff? (Salary records thakbe.)"))return; db.staff=(db.staff||[]).filter(x=>x.id!==id); saveData(); renderSalary(); }
+function showStaffHistory(id){
+  const s=(db.staff||[]).find(x=>x.id===id);
+  const recs=(db.salaries||[]).filter(x=>x.staffId===id).slice().sort((a,b)=>(b.month||'').localeCompare(a.month||''));
+  const box=document.getElementById("staffHistoryBox"); if(!box)return;
+  const totNet=recs.reduce((a,r)=>a+salNet(r),0), paid=recs.filter(r=>r.status==='Paid').reduce((a,r)=>a+salNet(r),0);
+  box.innerHTML=`<div class="formCard" style="border:2px solid var(--navy);margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><h3 style="margin:0">👤 ${admEsc(s?s.name:'')} — Salary History</h3><button class="btn ghost small" onclick="document.getElementById('staffHistoryBox').innerHTML=''">✕ Close</button></div>
+    <div style="font-size:.85rem;color:#555;margin:6px 0">Total earned: <b>${fmt(totNet)}</b> &middot; Paid: <b>${fmt(paid)}</b> &middot; Due: <b>${fmt(totNet-paid)}</b></div>
+    <div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:5px">Month</th><th style="text-align:right;padding:5px">Base</th><th style="text-align:right;padding:5px">Allow.</th><th style="text-align:right;padding:5px">Deduct.</th><th style="text-align:right;padding:5px">Net</th><th style="padding:5px">Status</th><th class="no-print"></th></tr>${recs.length?recs.map(r=>`<tr><td style="padding:5px">${r.month||''}</td><td style="padding:5px;text-align:right">${fmt(r.base!=null?r.base:r.amount)}</td><td style="padding:5px;text-align:right">${fmt(r.allowance||0)}</td><td style="padding:5px;text-align:right">${fmt(r.deduction||0)}</td><td style="padding:5px;text-align:right;font-weight:700">${fmt(salNet(r))}</td><td style="padding:5px;text-align:center"><span class="badge" style="background:${r.status==='Paid'?'var(--good)':'var(--bad)'};color:#fff">${r.status}</span></td><td class="no-print" style="padding:5px"><button class="btn small gold" onclick="printPayslip('${r.id}')">Payslip</button></td></tr>`).join(""):`<tr><td colspan="7" style="padding:5px">No records</td></tr>`}</table></div>
+  </div>`;
+  if(box.scrollIntoView) box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function printPayslip(recId){
+  const r=(db.salaries||[]).find(x=>x.id===recId); if(!r)return;
+  const a=db.agency; const net=salNet(r); const cell='border:1px solid #ccc;padding:6px';
+  document.getElementById("salaryPrintBox").innerHTML=`
+    <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
+    <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
+    <div style="text-align:right"><b>SALARY PAYSLIP</b><br><span style="font-size:.8rem">${r.month||''}</span></div></div>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem;margin-top:8px">
+      <tr><td style="${cell}">Employee</td><td style="${cell}"><b>${admEsc(r.name)}</b></td><td style="${cell}">Role</td><td style="${cell}">${admEsc(r.role||'')}</td></tr>
+      <tr><td style="${cell}">Month</td><td style="${cell}">${r.month||''}</td><td style="${cell}">Status</td><td style="${cell}">${r.status}${r.datePaid?' ('+r.datePaid+')':''}</td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem;margin-top:10px">
+      <tr><th style="${cell};text-align:left">Description</th><th style="${cell};text-align:right">Amount</th></tr>
+      <tr><td style="${cell}">Basic Salary</td><td style="${cell};text-align:right">${fmt(r.base!=null?r.base:r.amount)}</td></tr>
+      <tr><td style="${cell}">Allowance / Bonus</td><td style="${cell};text-align:right">${fmt(r.allowance||0)}</td></tr>
+      <tr><td style="${cell}">Deduction (advance / absent)</td><td style="${cell};text-align:right">- ${fmt(r.deduction||0)}</td></tr>
+      <tr style="background:#f0ece0"><td style="${cell}"><b>Net Payable</b></td><td style="${cell};text-align:right"><b>${fmt(net)}</b></td></tr>
+    </table>
+    ${r.note?`<div style="margin-top:8px;font-size:.8rem;color:#555">Note: ${admEsc(r.note)}</div>`:''}
+    <div class="signrow"><span>Received By (Employee)</span><span>Authorized Signature</span></div>`;
+  document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+  document.getElementById("sec-salaryprint").classList.add("active");
+  logActivity("Printed payslip: "+r.name+" "+r.month);
+}
+
+/* ---- Company Dues / Payables ---- */
+function renderPayables(){
+  const box=document.getElementById("payablesBody"); if(!box) return;
+  const salDue=(db.salaries||[]).filter(x=>x.status!=="Paid");
+  const commDue=(db.commissions||[]).filter(c=>c.direction==="Out" && c.status!=="Paid");
+  const other=(db.payables||[]);
+  const tSal=salDue.reduce((s,x)=>s+salNet(x),0);
+  const tComm=commDue.reduce((s,x)=>s+Number(x.amount||0),0);
+  const tOther=other.filter(x=>x.status!=="Paid").reduce((s,x)=>s+Number(x.amount||0),0);
+  const grand=tSal+tComm+tOther;
+  const sum=document.getElementById("payablesSummary"); if(sum) sum.innerHTML=`Total company owes: <b style="color:var(--bad)">${fmt(grand)}</b>`;
+  box.innerHTML=`
+    <div class="formCard" style="background:var(--warn-soft);border:1px solid var(--warn)"><h3 style="margin:0">💰 Total Company Dues: <span style="color:#b00020">${fmt(grand)}</span></h3>
+      <div style="font-size:.85rem;color:#555;margin-top:4px">Unpaid Salary: <b>${fmt(tSal)}</b> &middot; Payable Commission: <b>${fmt(tComm)}</b> &middot; Other Payables: <b>${fmt(tOther)}</b></div></div>
+    <div class="tablewrap" style="margin-top:12px"><h3>Unpaid Salary</h3><table><thead><tr><th>Name</th><th>Month</th><th>Amount</th><th class="no-print"></th></tr></thead><tbody>${salDue.length?salDue.map(x=>`<tr><td>${admEsc(x.name)}</td><td>${x.month||""}</td><td>${fmt(salNet(x))}</td><td class="no-print"><button class="btn small" onclick="show('salary')">Go</button></td></tr>`).join(""):`<tr><td colspan="4">None</td></tr>`}</tbody></table></div>
+    <div class="tablewrap" style="margin-top:12px"><h3>Payable Commission</h3><table><thead><tr><th>Party</th><th>Amount</th><th>Date</th><th class="no-print"></th></tr></thead><tbody>${commDue.length?commDue.map(c=>`<tr><td>${admEsc(c.party||"")}</td><td>${fmt(c.amount)}</td><td>${c.date||""}</td><td class="no-print"><button class="btn small" onclick="show('commission')">Go</button></td></tr>`).join(""):`<tr><td colspan="4">None</td></tr>`}</tbody></table></div>
+    <div class="tablewrap" style="margin-top:12px"><h3>Other Payables</h3><table><thead><tr><th>Title</th><th>Amount</th><th>Due Date</th><th>Status</th><th class="no-print"></th></tr></thead><tbody>${other.length?other.slice().sort((a,b)=>((a.status==="Paid")-(b.status==="Paid"))).map(x=>`<tr><td>${admEsc(x.title||"")}</td><td>${fmt(x.amount)}</td><td>${x.dueDate||""}</td><td><span class="badge" style="background:${x.status==="Paid"?"var(--good)":"var(--bad)"};color:#fff">${x.status||"Due"}</span></td><td class="no-print"><button class="btn small" onclick="togglePayablePaid('${x.id}')">${x.status==="Paid"?"Mark Due":"Mark Paid"}</button> ${canDelete()?`<button class="btn small danger" onclick="deletePayable('${x.id}')">Del</button>`:""}</td></tr>`).join(""):`<tr><td colspan="5">None</td></tr>`}</tbody></table></div>
+    <div style="text-align:right;margin-top:12px" class="no-print"><button class="btn gold" onclick="printPayables()">🖨 Print Dues</button></div>`;
+}
+async function addPayable(){
+  const g=id=>document.getElementById(id).value;
+  const title=g("pay_title").trim(); if(!title){alert("Enter title");return;}
+  const amount=Number(g("pay_amt"))||0; if(amount<=0){alert("Enter a valid amount");return;}
+  db.payables=db.payables||[];
+  db.payables.push({id:"pb"+Date.now(),title,amount,dueDate:g("pay_due"),note:g("pay_note2").trim(),status:"Due"});
+  logActivity("Payable added: "+title+" "+fmt(amount));
+  await saveData();
+  ["pay_title","pay_amt","pay_note2"].forEach(id=>document.getElementById(id).value="");
+  renderPayables();
+}
+async function togglePayablePaid(id){
+  const x=(db.payables||[]).find(y=>y.id===id); if(!x)return;
+  x.status=(x.status==="Paid")?"Due":"Paid";
+  await saveData(); renderPayables();
+}
+async function deletePayable(id){
+  if(!requireDelete())return;
+  if(!confirm("Delete this payable?"))return;
+  db.payables=(db.payables||[]).filter(y=>y.id!==id);
+  await saveData(); renderPayables();
+}
+function printPayables(){
+  const a=db.agency;
+  const salDue=(db.salaries||[]).filter(x=>x.status!=="Paid");
+  const commDue=(db.commissions||[]).filter(c=>c.direction==="Out" && c.status!=="Paid");
+  const other=(db.payables||[]).filter(x=>x.status!=="Paid");
+  const tSal=salDue.reduce((s,x)=>s+Number(x.amount||0),0), tComm=commDue.reduce((s,x)=>s+Number(x.amount||0),0), tOther=other.reduce((s,x)=>s+Number(x.amount||0),0);
+  const cell='border:1px solid #ccc;padding:5px';
+  const T=(title,head,rows)=>`<h3>${title}</h3><table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr>${head.map(h=>`<th style="${cell};text-align:left">${h}</th>`).join("")}</tr>${rows||`<tr><td colspan="${head.length}" style="${cell}">None</td></tr>`}</table>`;
+  document.getElementById("payablesPrintBox").innerHTML=`
+    <div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
+    <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
+    <div style="text-align:right"><b>COMPANY DUES / PAYABLES</b><br><span style="font-size:.7rem;color:#777">${new Date().toISOString().slice(0,10)}</span></div></div>
+    <h3 style="color:#b00020">Total Company Owes: ${fmt(tSal+tComm+tOther)}</h3>
+    ${T("Unpaid Salary",["Name","Month","Amount"], salDue.map(x=>`<tr><td style="${cell}">${admEsc(x.name)}</td><td style="${cell}">${x.month||""}</td><td style="${cell};text-align:right">${fmt(salNet(x))}</td></tr>`).join(""))}
+    ${T("Payable Commission",["Party","Date","Amount"], commDue.map(c=>`<tr><td style="${cell}">${admEsc(c.party||"")}</td><td style="${cell}">${c.date||""}</td><td style="${cell};text-align:right">${fmt(c.amount)}</td></tr>`).join(""))}
+    ${T("Other Payables",["Title","Due Date","Amount"], other.map(x=>`<tr><td style="${cell}">${admEsc(x.title||"")}</td><td style="${cell}">${x.dueDate||""}</td><td style="${cell};text-align:right">${fmt(x.amount)}</td></tr>`).join(""))}
+    <div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
+  document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+  document.getElementById("sec-payablesprint").classList.add("active");
+  logActivity("Printed company dues");
+}
+
+
+/* ================= STUDENT SELF-VIEW PORTAL ================= */
+function studentPortalLink(sid){ return location.origin+location.pathname+"?student="+encodeURIComponent(sid); }
+function _digits(x){ return String(x||"").replace(/[^0-9]/g,""); }
+async function startStudentPortal(sid){
+  try{
+    const ls=document.getElementById("loadingScreen"); if(ls) ls.classList.add("hidden");
+    const lo=document.getElementById("loginOverlay"); if(lo) lo.classList.add("hidden");
+    const app=document.getElementById("app"); if(app) app.style.display="none";
+    const portal=document.getElementById("studentPortal"); portal.classList.remove("hidden");
+    const logoEl=document.getElementById("portalLogo"); if(logoEl) logoEl.innerHTML=`<img src="${LOGO_DATA}" style="width:100%;height:100%;object-fit:contain">`;
+    document.getElementById("portalVerifyBox").innerHTML='<div style="text-align:center;padding:24px;color:#777">Loading…</div>';
+    if(hasFirebase){ await waitForAuthReady(); }
+    let data=null;
+    try{ const res=await storageAdapter.get(STORAGE_KEY, true); data=JSON.parse(res.value); }catch(e){}
+    if(!data || !Array.isArray(data.students)){ document.getElementById("portalVerifyBox").innerHTML='<div class="formCard" style="background:#fff">Could not load data. Please check your internet and reload.</div>'; return; }
+    db=data;
+    const s=(db.students||[]).find(x=>(x.sid||"").toLowerCase()===String(sid).toLowerCase());
+    if(!s){ document.getElementById("portalVerifyBox").innerHTML='<div class="formCard" style="background:#fff">Student not found. Please check the link.</div>'; return; }
+    window._portalStudent=s;
+    document.getElementById("portalVerifyBox").innerHTML=`
+      <div class="formCard" style="background:#fff">
+        <h3 style="margin-top:0">Verify it's you</h3>
+        <div class="note" style="color:#555;margin-bottom:8px">Apnar phone number din (academy-te deওয়া number ta).</div>
+        <input id="portalPhone" placeholder="Phone number" inputmode="numeric" style="width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box">
+        <button class="btn" style="margin-top:10px;width:100%" onclick="portalVerify()">View My Info</button>
+        <div id="portalErr" style="color:#c00;margin-top:6px;font-size:.85rem"></div>
+      </div>`;
+  }catch(e){ console.error("Portal error", e); }
+}
+function portalVerify(){
+  const s=window._portalStudent; if(!s) return;
+  const entered=_digits(document.getElementById("portalPhone").value);
+  const onfile=_digits(s.phone);
+  const ok = entered.length>=4 && onfile.length>=4 && (onfile.endsWith(entered) || entered.endsWith(onfile) || onfile===entered);
+  if(!ok){ document.getElementById("portalErr").textContent="Phone number mile nai. Abar try korun ba academy-te jogajog korun."; return; }
+  renderPortalContent(s);
+}
+function renderPortalContent(s){
+  document.getElementById("portalVerifyBox").innerHTML="";
+  document.getElementById("portalContent").innerHTML=`
+    <div class="formCard" style="background:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><h3 style="margin:0">${admEsc(s.name)} <span style="color:#C0392B;font-size:.9rem">${s.sid||''}</span></h3><button class="btn small" onclick="window.print()">🖨 Print</button></div>
+      <h4 style="color:#1F3864;margin:12px 0 4px">My Information</h4>${_stuInfoHTML(s)}
+      <h4 style="color:#1F3864;margin:14px 0 4px">Payment Details</h4>${_stuPaymentsHTML(s)}
+      <h4 style="color:#1F3864;margin:14px 0 4px">Attendance</h4>${_stuAttendanceHTML(s)}
+      <div class="note" style="color:#999;font-size:.75rem;margin-top:10px">Read-only view &bull; ${db.agency?db.agency.name:''}. Kono bhul thakle academy-te jogajog korun.</div>
+    </div>`;
+}
+function showStudentQR(id){
+  const s=db.students.find(x=>x.id===id); if(!s)return;
+  const url=studentPortalLink(s.sid);
+  const box=document.getElementById("studentQRBox"); if(!box)return;
+  box.innerHTML=`<div class="formCard" style="margin-bottom:14px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <div id="stuQRImg" style="width:150px;height:150px;background:#fff;padding:6px;border:1px solid #eee;flex-shrink:0"></div>
+    <div style="flex:1;min-width:200px"><h3 style="margin:0 0 6px">📱 Student Portal Link</h3>
+      <div class="note" style="color:#555;word-break:break-all;font-size:.8rem">${url}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" onclick="(navigator.clipboard&&navigator.clipboard.writeText('${url}').then(()=>alert('Link copied')))||alert('${url}')">Copy Link</button>
+      <button class="btn ghost small" onclick="document.getElementById('studentQRBox').innerHTML=''">Close</button></div>
+      <div class="note" style="color:#888;font-size:.75rem;margin-top:6px">Student ei QR scan kore phone number diye nijer info dekhbe. (App online host kora thakle kaj korbe.)</div>
+    </div></div></div>`;
+  const el=document.getElementById("stuQRImg");
+  if(el && typeof QRCode!=="undefined"){ el.innerHTML=""; try{ new QRCode(el,{text:url,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }catch(e){} }
+}
+
+(function boot(){
+  if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded", boot); return; }
+  try{ var _sp=new URLSearchParams(location.search).get('student'); if(_sp){ startStudentPortal(_sp); return; } }catch(e){}
+  loadData();
+})();
 </script>
+<div id="studentPortal" class="hidden" style="position:fixed;inset:0;z-index:10000;background:#f4f1ea;overflow:auto">
+  <div style="max-width:560px;margin:0 auto;padding:16px">
+    <div style="text-align:center;padding:14px 0">
+      <div id="portalLogo" style="width:64px;height:64px;margin:0 auto"></div>
+      <h2 style="margin:6px 0 2px;color:#1F3864">Galaxy International Academy</h2>
+      <div style="color:#777;font-size:.85rem">Student Portal</div>
+    </div>
+    <div id="portalVerifyBox"></div>
+    <div id="portalContent"></div>
+  </div>
+</div>
 </body>
 </html>
