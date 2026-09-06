@@ -289,6 +289,69 @@ tr:hover td{background:var(--cream)}
 .calAdd{margin-top:12px;display:flex;flex-direction:column;gap:8px;max-width:460px}
 .calAdd input,.calAdd textarea{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.85rem;background:var(--paper);color:var(--ink);font-family:inherit}
 </style>
+<style id="giaFancy">
+/* ===== Premium Sakura — motion & color (light + dark) ===== */
+.card,.btn,.formCard,nav.side button,input,select,textarea,.badge{transition:transform .25s cubic-bezier(.22,.61,.36,1),box-shadow .25s ease,background .3s ease,color .3s ease,border-color .3s ease,padding .2s ease}
+@keyframes giaIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes giaShift{0%{background-position:0% 0}100%{background-position:200% 0}}
+.section.active{animation:giaIn .45s cubic-bezier(.22,.61,.36,1)}
+
+/* Cards: animated gradient accent + hover glow + staggered entrance */
+.card{position:relative}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--navy),var(--sakura),var(--gold));background-size:200% 100%;opacity:.9;animation:giaShift 6s linear infinite}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(201,69,91,.20),0 6px 14px rgba(31,56,100,.12)}
+.card.accent:hover{box-shadow:0 16px 36px rgba(31,56,100,.22)}
+.card.gold::before{background:linear-gradient(90deg,var(--gold),var(--sakura),var(--gold));background-size:200% 100%}
+.cards .card{animation:giaIn .5s both}
+.cards .card:nth-child(2){animation-delay:.05s}
+.cards .card:nth-child(3){animation-delay:.10s}
+.cards .card:nth-child(4){animation-delay:.15s}
+.cards .card:nth-child(5){animation-delay:.20s}
+.cards .card:nth-child(6){animation-delay:.25s}
+
+/* Buttons: gradient + shine sweep + press */
+.btn{background:linear-gradient(135deg,var(--navy),var(--navy-deep));position:relative;overflow:hidden}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(31,56,100,.30)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn::after{content:"";position:absolute;top:0;left:-130%;width:60%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-20deg);transition:left .6s ease;pointer-events:none}
+.btn:hover::after{left:150%}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn.ghost:hover{background:var(--sakura-soft);border-color:var(--sakura);color:var(--navy)}
+.btn.danger{background:linear-gradient(135deg,var(--bad),#8f2b21)}
+
+/* Nav: accent slide + gradient active pill */
+nav.side button{position:relative}
+nav.side button::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);height:0;width:3px;border-radius:3px;background:var(--sakura);transition:height .25s ease}
+nav.side button:hover{background:var(--sakura-soft);padding-left:16px;color:var(--navy)}
+nav.side button:hover::before{height:58%}
+nav.side button.active{background:linear-gradient(135deg,var(--navy),var(--sakura))!important;color:#fff!important;box-shadow:0 8px 18px rgba(201,69,91,.30)}
+nav.side button.active::before{height:70%;background:var(--gold)}
+
+/* Inputs: sakura focus ring */
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sakura)!important;box-shadow:0 0 0 3px var(--sakura-soft)}
+
+/* Panels / brand / badges */
+.formCard{transition:box-shadow .3s ease,transform .3s ease}
+.formCard:hover{box-shadow:0 12px 30px rgba(31,56,100,.10)}
+.brandbox img{transition:transform .5s cubic-bezier(.22,.61,.36,1)}
+.brandbox:hover img{transform:rotate(-6deg) scale(1.06)}
+.badge:hover{transform:scale(1.08)}
+
+/* Topbar animated gradient underline */
+header.topbar{position:relative}
+header.topbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--navy),var(--sakura),var(--gold),var(--sakura),var(--navy));background-size:200% 100%;animation:giaShift 8s linear infinite}
+
+/* Table row hover */
+.tablewrap tbody tr{transition:background .2s ease}
+.tablewrap tbody tr:hover{background:var(--sakura-soft)}
+
+/* Theme switch smoothness */
+body{transition:background-color .35s ease,color .35s ease}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media print{.card::before,header.topbar::after,.btn::after{display:none!important}}
+</style>
 </head>
 <body>
 
@@ -404,6 +467,7 @@ tr:hover td{background:var(--cream)}
       <section class="section" id="sec-dashboard">
         <div class="panelTitle"><h2 id="h2-dashboard">Dashboard</h2><span class="s">A quick overview of the overall status</span></div>
         <div id="backupReminderBanner"></div>
+        <div id="expiryAlerts"></div>
         <div class="cards" id="dashCards"></div>
         <div class="formCard">
           <h3 style="margin-bottom:10px">Collection Trend — Last 6 Months</h3>
@@ -735,6 +799,7 @@ tr:hover td{background:var(--cream)}
         <div class="toolbar no-print">
           <label style="font-size:.8rem;color:var(--muted);font-weight:600;align-self:center">Month:</label>
           <input type="month" id="rep_month" onchange="renderReports()">
+          <button class="btn small no-print" onclick="printMonthlyPL()" style="margin-left:8px">🧾 Monthly P/L</button>
         </div>
         <div class="cards" id="reportCards"></div>
         <div class="formCard no-print">
@@ -784,6 +849,95 @@ tr:hover td{background:var(--cream)}
         <div style="text-align:center;margin-top:14px" class="no-print">
           <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
           <button class="btn ghost" onclick="show(window._printReturnTab||'dashboard')">← Back</button>
+        </div>
+      </section>
+
+      <!-- SSW ACCOUNTS -->
+      <section class="section" id="sec-ssw">
+        <div class="panelTitle"><h2>SSW Accounts</h2><span class="s">Specified Skilled Worker — candidates, companies, payment, cost & profit</span></div>
+        <div class="no-print" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="btn" id="sswTabCand" onclick="sswTab('cand')">👤 Candidates</button>
+          <button class="btn ghost" id="sswTabComp" onclick="sswTab('comp')">🏢 Companies</button>
+        </div>
+
+        <div id="sswCandView">
+          <div class="cards" id="sswSummary"></div>
+          <div id="sswFunnel" style="margin-top:12px"></div>
+          <div class="formCard" style="margin-top:12px">
+            <h3 style="margin-bottom:10px" id="sswFormTitle">Add SSW Candidate</h3>
+            <div class="grid3">
+              <div class="field"><label>Name</label><input id="sswf_name"></div>
+              <div class="field"><label>Phone</label><input id="sswf_phone"></div>
+              <div class="field"><label>Date of Birth</label><input type="date" id="sswf_dob"></div>
+              <div class="field"><label>Sector</label><select id="sswf_sector"></select></div>
+              <div class="field"><label>Target Company</label><select id="sswf_company"></select></div>
+              <div class="field"><label>Departure Date</label><input type="date" id="sswf_departure"></div>
+              <div class="field"><label>Package Fee (৳)</label><input type="number" id="sswf_fee"></div>
+              <div class="field"><label>Status / Stage</label><select id="sswf_status"></select></div>
+              <div class="field"><label>Agent / Broker</label><input id="sswf_agent"></div>
+              <div class="field"><label>Referral Source</label><input id="sswf_referral"></div>
+              <div class="field"><label>Passport No</label><input id="sswf_passport"></div>
+              <div class="field"><label>Passport Expiry</label><input type="date" id="sswf_passexp"></div>
+            </div>
+            <div class="formCard" style="margin-top:10px;background:var(--cream)">
+              <label style="font-weight:600;color:var(--navy)">Exams / Certificates Passed</label>
+              <div class="grid3" style="margin-top:8px">
+                <div class="field"><label>JLPT</label><select id="sswf_jlpt"></select></div>
+                <div class="field"><label>NAT-TEST</label><select id="sswf_nat"></select></div>
+                <div class="field"><label>&nbsp;</label><div style="display:flex;flex-direction:column;gap:6px"><label style="font-weight:400"><input type="checkbox" id="sswf_jft"> JFT-Basic passed</label><label style="font-weight:400"><input type="checkbox" id="sswf_skill"> Sector Skill Test passed</label></div></div>
+              </div>
+            </div>
+            <div class="field" style="margin-top:10px"><label>Note</label><input id="sswf_note"></div>
+            <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn" onclick="addSSW()" id="sswSaveBtn">＋ Add Candidate</button>
+              <button class="btn ghost" onclick="sswCancelEdit()" id="sswCancelBtn" style="display:none">Cancel</button>
+            </div>
+          </div>
+          <div class="formCard" style="margin-top:12px">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+              <input id="sswSearch" placeholder="🔍 Search name / phone / sector" oninput="renderSSW()" style="flex:1;min-width:160px">
+              <select id="sswFilterStatus" onchange="renderSSW()"><option value="">All statuses</option></select>
+              <button class="btn small ghost no-print" onclick="sswReport()">📊 Report</button>
+            </div>
+            <div id="sswCompFilterBar"></div>
+            <div class="tablewrap"><table><thead><tr><th>Name</th><th>Sector</th><th>Company</th><th>Certificates</th><th>Package</th><th>Paid</th><th>Due</th><th>Cost</th><th>Profit</th><th>Status</th><th class="no-print"></th></tr></thead><tbody id="sswBody"></tbody></table></div>
+          </div>
+          <div id="sswDetail" style="margin-top:12px"></div>
+        </div>
+
+        <div id="sswCompView" style="display:none">
+          <div class="cards" id="swcSummary"></div>
+          <div id="swcGap" style="margin-top:12px"></div>
+          <div class="formCard" style="margin-top:12px">
+            <h3 style="margin-bottom:10px" id="swcFormTitle">Add Company</h3>
+            <div class="grid3">
+              <div class="field"><label>Company Name</label><input id="swc_name"></div>
+              <div class="field"><label>Sector</label><select id="swc_sector"></select></div>
+              <div class="field"><label>Contact Person</label><input id="swc_person"></div>
+              <div class="field"><label>Phone</label><input id="swc_phone"></div>
+              <div class="field"><label>Email</label><input id="swc_email"></div>
+              <div class="field"><label>Demand (openings)</label><input type="number" id="swc_demand"></div>
+            </div>
+            <div class="field" style="margin-top:10px"><label>Note / Address</label><input id="swc_note"></div>
+            <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn" onclick="addSSWCompany()" id="swcSaveBtn">＋ Add Company</button>
+              <button class="btn ghost" onclick="sswCompCancelEdit()" id="swcCancelBtn" style="display:none">Cancel</button>
+              <button class="btn small ghost no-print" onclick="sswCompaniesReport()">📊 Report</button>
+            </div>
+          </div>
+          <div class="formCard" style="margin-top:12px">
+            <div class="tablewrap"><table><thead><tr><th>Company</th><th>Sector</th><th>Contact</th><th>Phone</th><th>Demand</th><th>Assigned</th><th>Remaining</th><th class="no-print"></th></tr></thead><tbody id="swcBody"></tbody></table></div>
+          </div>
+          <div id="swcDetail" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <!-- SSW PRINT -->
+      <section class="section printme" id="sec-sswprint">
+        <div class="reportPaper" id="sswPrintBox"></div>
+        <div style="text-align:center;margin-top:14px" class="no-print">
+          <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+          <button class="btn ghost" onclick="show('ssw')">← Back</button>
         </div>
       </section>
 
@@ -1096,7 +1250,7 @@ function startFirebaseSync(){
       const incoming = JSON.parse(docSnap.data().value);
       if(!incoming || !Array.isArray(incoming.students) || !Array.isArray(incoming.users)) return;
       db = incoming;
-      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
+      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
       const activeSection=document.querySelector(".section.active");
       if(activeSection){ const activeId=activeSection.id.replace("sec-",""); show(activeId); }
     }catch(e){ console.error("Sync parse failed", e); }
@@ -1124,7 +1278,7 @@ async function loadData(){
   try{
     const res = await storageAdapter.get(STORAGE_KEY, true);
     db = JSON.parse(res.value);
-    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[];
+    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
     db.students.forEach(s=>{s.documents=s.documents||{}; s.installments=s.installments||[];});
     let _mig=false;
     (db.users||[]).forEach(u=>{
@@ -1152,7 +1306,7 @@ async function loadData(){
         try{
           const res2 = await storageAdapter.get(STORAGE_KEY, true);
           db = JSON.parse(res2.value);
-          db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
+          db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
           (db.students||[]).forEach(s=>{s.documents=s.documents||{}; s.installments=s.installments||[];});
           recovered=true;
         }catch(e2){
@@ -1176,7 +1330,7 @@ function defaultData(){
   return {
     agency:{name:"Galaxy International Academy", address:"REVCON NURHEIGHTS, Plot #04, Block-L, Agrabad Access Road, Chattogram (Opposite City Hall)", phone:"+8801830150171", email:"giabd.official@gmail.com", website:"giabd.com"},
     users:[{id:"u1", username:"admin", password:"admin123", name:"MD SHARIF BHUYAN", role:"Cofounder"}],
-    students:[], leads:[], classes:[], expenses:[], attendance:[], activityLog:[], schools:[], tasks:[], calendarEvents:[], applications:[], admApps:[], commissions:[], communications:[], salaries:[], payables:[], staff:[],
+    students:[], leads:[], classes:[], expenses:[], attendance:[], activityLog:[], schools:[], tasks:[], calendarEvents:[], applications:[], admApps:[], commissions:[], communications:[], salaries:[], payables:[], staff:[], ssw:[], sswCompanies:[],
     nextNum:1
   };
 }
@@ -1291,55 +1445,56 @@ function doLogout(){
 }
 
 const NAV=[
-  {id:"dashboard",en:"Dashboard",bn:"ড্যাশবোর্ড"},
-  {id:"leads",en:"Leads",bn:"লিডস"},
-  {id:"students",en:"Students",bn:"শিক্ষার্থী"},
-  {id:"admform",en:"Admission Form",bn:"ভর্তি ফরম"},
-  {id:"classes",en:"Classes",bn:"ক্লাস/ব্যাচ"},
-  {id:"schools",en:"Schools",bn:"স্কুল"},
-  {id:"payments",en:"Payments",bn:"পেমেন্ট"},
-  {id:"documents",en:"Documents",bn:"ডকুমেন্ট"},
-  {id:"attendance",en:"Attendance",bn:"উপস্থিতি"},
-  {id:"expenses",en:"Expenses",bn:"খরচ"},
-  {id:"tasks",en:"Tasks",bn:"কাজ"},
-  {id:"deadlines",en:"Deadlines",bn:"ডেডলাইন"},
-  {id:"calendar",en:"Calendar",bn:"ক্যালেন্ডার"},
-  {id:"applications",en:"Applications",bn:"আবেদন"},
-  {id:"visa",en:"Visa Tracking",bn:"ভিসা"},
-  {id:"dues",en:"Dues / Outstanding",bn:"বকেয়া"},
-  {id:"commission",en:"Commission",bn:"কমিশন"},
-  {id:"salary",en:"Salary",bn:"বেতন"},
-  {id:"payables",en:"Company Dues",bn:"কোম্পানি বকেয়া"},
-  {id:"partners",en:"Investment & Profit",bn:"বিনিয়োগ ও লাভ"},
-  {id:"communications",en:"Communication Log",bn:"যোগাযোগ"},
-  {id:"reports",en:"Reports",bn:"রিপোর্ট"},
-  {id:"settings",en:"Settings",bn:"সেটিংস"}
+  {id:"dashboard",en:"Dashboard",bn:"ড্যাশবোর্ড",ja:"ダッシュボード"},
+  {id:"leads",en:"Leads",bn:"লিডস",ja:"リード"},
+  {id:"students",en:"Students",bn:"শিক্ষার্থী",ja:"学生"},
+  {id:"admform",en:"Admission Form",bn:"ভর্তি ফরম",ja:"入学フォーム"},
+  {id:"classes",en:"Classes",bn:"ক্লাস/ব্যাচ",ja:"クラス"},
+  {id:"schools",en:"Schools",bn:"স্কুল",ja:"学校"},
+  {id:"payments",en:"Payments",bn:"পেমেন্ট",ja:"支払い"},
+  {id:"documents",en:"Documents",bn:"ডকুমেন্ট",ja:"書類"},
+  {id:"attendance",en:"Attendance",bn:"উপস্থিতি",ja:"出席"},
+  {id:"expenses",en:"Expenses",bn:"খরচ",ja:"経費"},
+  {id:"tasks",en:"Tasks",bn:"কাজ",ja:"タスク"},
+  {id:"deadlines",en:"Deadlines",bn:"ডেডলাইন",ja:"締切"},
+  {id:"calendar",en:"Calendar",bn:"ক্যালেন্ডার",ja:"カレンダー"},
+  {id:"applications",en:"Applications",bn:"আবেদন",ja:"申請"},
+  {id:"visa",en:"Visa Tracking",bn:"ভিসা",ja:"ビザ"},
+  {id:"dues",en:"Dues / Outstanding",bn:"বকেয়া",ja:"未払い"},
+  {id:"commission",en:"Commission",bn:"কমিশন",ja:"コミッション"},
+  {id:"ssw",en:"SSW Accounts",bn:"এসএসডব্লিউ",ja:"特定技能(SSW)"},
+  {id:"salary",en:"Salary",bn:"বেতন",ja:"給与"},
+  {id:"payables",en:"Company Dues",bn:"কোম্পানি বকেয়া",ja:"会社未払金"},
+  {id:"partners",en:"Investment & Profit",bn:"বিনিয়োগ ও লাভ",ja:"投資と利益"},
+  {id:"communications",en:"Communication Log",bn:"যোগাযোগ",ja:"連絡記録"},
+  {id:"reports",en:"Reports",bn:"রিপোর্ট",ja:"レポート"},
+  {id:"settings",en:"Settings",bn:"সেটিংস",ja:"設定"}
 ];
 let currentLang = "en";
 const TOPBAR_I18N = {
-  btnPrint:{en:"🖨 Print", bn:"🖨 প্রিন্ট"},
-  btnBackup:{en:"⬇ Backup", bn:"⬇ ব্যাকআপ"},
-  btnRestore:{en:"⬆ Restore", bn:"⬆ পুনরুদ্ধার"},
-  btnLogout:{en:"Logout", bn:"লগআউট"},
+  btnPrint:{en:"🖨 Print", bn:"🖨 প্রিন্ট", ja:"🖨 印刷"},
+  btnBackup:{en:"⬇ Backup", bn:"⬇ ব্যাকআপ", ja:"⬇ バックアップ"},
+  btnRestore:{en:"⬆ Restore", bn:"⬆ পুনরুদ্ধার", ja:"⬆ 復元"},
+  btnLogout:{en:"Logout", bn:"লগআউট", ja:"ログアウト"},
 };
 const H2_I18N = {
-  "h2-dashboard":{en:"Dashboard", bn:"ড্যাশবোর্ড"},
-  "h2-leads":{en:"Leads", bn:"লিডস"},
-  "h2-students":{en:"Student List", bn:"শিক্ষার্থী তালিকা"},
-  "h2-classes":{en:"Classes / Batches", bn:"ক্লাস / ব্যাচ"},
-  "h2-schools":{en:"Partner Schools (Japan)", bn:"পার্টনার স্কুল (জাপান)"},
-  "h2-payments":{en:"Record a Payment", bn:"পেমেন্ট রেকর্ড করুন"},
-  "h2-installments":{en:"Installment Plan", bn:"কিস্তির পরিকল্পনা"},
-  "h2-receipts":{en:"Recent Receipts", bn:"সাম্প্রতিক রিসিট"},
-  "h2-docs":{en:"Document Checklist", bn:"ডকুমেন্ট চেকলিস্ট"},
-  "h2-docsummary":{en:"Document Summary — All Students", bn:"সব শিক্ষার্থীর ডকুমেন্ট সারাংশ"},
-  "h2-attendance":{en:"Attendance", bn:"উপস্থিতি"},
-  "h2-expenses":{en:"Expenses / Cashbook", bn:"খরচ / ক্যাশবুক"},
-  "h2-reports":{en:"Reports", bn:"রিপোর্ট"},
-  "h2-attreport":{en:"Batch Attendance %", bn:"ব্যাচ উপস্থিতি %"},
-  "h2-deadlines":{en:"Upcoming Deadlines", bn:"আসন্ন ডেডলাইন"},
-  "h2-tasks":{en:"Office Tasks", bn:"অফিস কাজ"},
-  "h2-settings":{en:"Settings", bn:"সেটিংস"},
+  "h2-dashboard":{en:"Dashboard", bn:"ড্যাশবোর্ড", ja:"ダッシュボード"},
+  "h2-leads":{en:"Leads", bn:"লিডস", ja:"リード"},
+  "h2-students":{en:"Student List", bn:"শিক্ষার্থী তালিকা", ja:"学生リスト"},
+  "h2-classes":{en:"Classes / Batches", bn:"ক্লাস / ব্যাচ", ja:"クラス / バッチ"},
+  "h2-schools":{en:"Partner Schools (Japan)", bn:"পার্টনার স্কুল (জাপান)", ja:"提携校（日本）"},
+  "h2-payments":{en:"Record a Payment", bn:"পেমেন্ট রেকর্ড করুন", ja:"支払いの記録"},
+  "h2-installments":{en:"Installment Plan", bn:"কিস্তির পরিকল্পনা", ja:"分割プラン"},
+  "h2-receipts":{en:"Recent Receipts", bn:"সাম্প্রতিক রিসিট", ja:"最近の領収書"},
+  "h2-docs":{en:"Document Checklist", bn:"ডকুমেন্ট চেকলিস্ট", ja:"書類チェックリスト"},
+  "h2-docsummary":{en:"Document Summary — All Students", bn:"সব শিক্ষার্থীর ডকুমেন্ট সারাংশ", ja:"書類概要 — 全学生"},
+  "h2-attendance":{en:"Attendance", bn:"উপস্থিতি", ja:"出席"},
+  "h2-expenses":{en:"Expenses / Cashbook", bn:"খরচ / ক্যাশবুক", ja:"経費 / 現金出納帳"},
+  "h2-reports":{en:"Reports", bn:"রিপোর্ট", ja:"レポート"},
+  "h2-attreport":{en:"Batch Attendance %", bn:"ব্যাচ উপস্থিতি %", ja:"バッチ出席率 %"},
+  "h2-deadlines":{en:"Upcoming Deadlines", bn:"আসন্ন ডেডলাইন", ja:"今後の締切"},
+  "h2-tasks":{en:"Office Tasks", bn:"অফিস কাজ", ja:"オフィス業務"},
+  "h2-settings":{en:"Settings", bn:"সেটিংস", ja:"設定"},
 };
 function toggleTheme(){
   const isDark = document.body.classList.toggle("dark-theme");
@@ -1356,13 +1511,15 @@ async function loadThemePref(){
   }catch(e){}
 }
 function toggleLang(){
-  currentLang = currentLang==="en" ? "bn" : "en";
-  document.getElementById("langToggleBtn").textContent = currentLang==="en" ? "বাং" : "EN";
+  const order=["en","bn","ja"];
+  currentLang = order[(order.indexOf(currentLang)+1)%order.length];
+  const nextLabel={en:"বাং", bn:"日本語", ja:"EN"};
+  const btn=document.getElementById("langToggleBtn"); if(btn) btn.textContent = nextLabel[currentLang];
   buildNav();
   const activeSection=document.querySelector(".section.active");
   if(activeSection) { const activeId=activeSection.id.replace("sec-",""); show(activeId); }
-  Object.keys(TOPBAR_I18N).forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=TOPBAR_I18N[id][currentLang]; });
-  Object.keys(H2_I18N).forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=H2_I18N[id][currentLang]; });
+  Object.keys(TOPBAR_I18N).forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=(TOPBAR_I18N[id][currentLang]||TOPBAR_I18N[id].en); });
+  Object.keys(H2_I18N).forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=(H2_I18N[id][currentLang]||H2_I18N[id].en); });
 }
 function buildNav(){
   const nav=document.getElementById("sideNav");
@@ -1370,7 +1527,7 @@ function buildNav(){
   NAV.forEach(n=>{
     if(!navAllowed(n.id)) return;
     const b=document.createElement("button");
-    b.textContent=n[currentLang]; b.onclick=()=>show(n.id); b.id="nav-"+n.id;
+    b.textContent=n[currentLang]||n.en; b.onclick=()=>show(n.id); b.id="nav-"+n.id;
     nav.appendChild(b);
   });
 }
@@ -1398,6 +1555,7 @@ function show(id){
   if(id==="visa")renderVisa();
   if(id==="dues")renderDues();
   if(id==="commission")renderCommission();
+  if(id==="ssw")renderSSW();
   if(id==="salary")renderSalary();
   if(id==="payables")renderPayables();
   if(id==="partners")renderPartners();
@@ -1420,6 +1578,7 @@ function badgeClass(status){
 
 /* ---------------- DASHBOARD ---------------- */
 function renderDashboard(){
+  try{renderExpiryAlerts();}catch(e){}
   const s=db.students;
   const totalStudents=s.length;
   const totalDue=s.reduce((a,x)=>a+studentDue(x),0);
@@ -3298,7 +3457,7 @@ function importBackup(evt){
       const parsed=JSON.parse(e.target.result);
       if(!parsed.students || !parsed.users){alert("File is not in the correct format");return;}
       db=parsed;
-      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[];
+      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
       await saveData();
       alert("Data restored successfully");
       show("dashboard");
@@ -3424,7 +3583,7 @@ async function uploadAdmPhoto(inputEl){
 async function saveAdmApp(alsoPrint){
   const name=admG("ad_name").trim();
   if(!name){alert("Full Name is required");return;}
-  db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[];
+  db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
   const edu={};
   ["ssc","hsc","bachelor","others"].forEach(k=>{ edu[k]={inst:admG("ad_edu_"+k+"_inst").trim(),board:admG("ad_edu_"+k+"_board").trim(),year:admG("ad_edu_"+k+"_year").trim(),result:admG("ad_edu_"+k+"_result").trim()}; });
   const programs=ADM_PROGRAMS.filter((p,i)=>admChk("ad_prog_"+i));
@@ -3624,6 +3783,423 @@ function partnerReadInputs(){
 function partnerAddRow(){ db.partnership.allocations=partnerReadInputs(); db.partnership.allocations.push({name:"New Partner",pct:0}); renderPartners(); }
 function partnerRemoveRow(i){ const a=partnerReadInputs(); a.splice(i,1); if(a.length===0)a.push({name:"Company",pct:100}); db.partnership.allocations=a; renderPartners(); }
 async function savePartners(){ db.partnership.allocations=partnerReadInputs(); logActivity("Updated profit-sharing setup"); await saveData(); renderPartnerCalc(); alert("Shares saved"); }
+/* ===== SSW ACCOUNTS ===== */
+const SSW_SECTORS=["Food & Beverage","Nursing Care","Construction","Agriculture","Manufacturing","Building Cleaning","Accommodation (Hotel)","Shipbuilding","Automobile Repair","Aviation","Fishery","Food Manufacturing","Industrial Machinery","Electric/Electronics","Other"];
+const SSW_STATUS=["New","Language (JFT/N4)","Skill Test","Application","COE","Visa","Flew to Japan","On Hold","Cancelled"];
+const SSW_JLPT=["","N5","N4","N3","N2","N1"];
+const SSW_NAT=["","5Q","4Q","3Q","2Q","1Q"];
+function sswPaid(c){return (c.payments||[]).reduce((a,p)=>a+Number(p.amount||0),0);}
+function sswCostTotal(c){return (c.costs||[]).reduce((a,p)=>a+Number(p.amount||0),0);}
+function sswDue(c){return Number(c.packageFee||0)-sswPaid(c);}
+function sswProfit(c){return sswPaid(c)-sswCostTotal(c);}
+function sswCertSummary(c){const e=c.certs||{};const t=[];if(e.jlpt)t.push("JLPT "+e.jlpt);if(e.jft)t.push("JFT-Basic");if(e.nat)t.push("NAT "+e.nat);if(e.skill)t.push("Skill Test");return t.length?t.join(" · "):"—";}
+function sswCompanyName(id){const co=(db.sswCompanies||[]).find(x=>x.id===id);return co?co.name:"";}
+function sswAssignedCount(id){return (db.ssw||[]).filter(c=>c.companyId===id).length;}
+function sswCompanyOptions(sel){return '<option value="">— none —</option>'+(db.sswCompanies||[]).slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(co=>`<option value="${co.id}" ${co.id===sel?"selected":""}>${admEsc(co.name)}</option>`).join("");}
+function sswOptList(arr){return arr.map(s=>s===""?`<option value="">—</option>`:`<option>${admEsc(s)}</option>`).join("");}
+function sswFillSelects(){
+  const sec=document.getElementById("sswf_sector"); if(sec && !sec._filled){ sec.innerHTML=SSW_SECTORS.map(s=>`<option>${admEsc(s)}</option>`).join(""); sec._filled=true; }
+  const st=document.getElementById("sswf_status"); if(st && !st._filled){ st.innerHTML=SSW_STATUS.map(s=>`<option>${admEsc(s)}</option>`).join(""); st._filled=true; }
+  const fs=document.getElementById("sswFilterStatus"); if(fs && !fs._filled){ fs.innerHTML='<option value="">All statuses</option>'+SSW_STATUS.map(s=>`<option>${admEsc(s)}</option>`).join(""); fs._filled=true; }
+  const jl=document.getElementById("sswf_jlpt"); if(jl && !jl._filled){ jl.innerHTML=sswOptList(SSW_JLPT); jl._filled=true; }
+  const nt=document.getElementById("sswf_nat"); if(nt && !nt._filled){ nt.innerHTML=sswOptList(SSW_NAT); nt._filled=true; }
+  const cs=document.getElementById("swc_sector"); if(cs && !cs._filled){ cs.innerHTML=SSW_SECTORS.map(s=>`<option>${admEsc(s)}</option>`).join(""); cs._filled=true; }
+  const cmp=document.getElementById("sswf_company"); if(cmp){ const cur=cmp.value; cmp.innerHTML=sswCompanyOptions(); cmp.value=cur; }
+}
+function sswTab(which){
+  const cand=document.getElementById("sswCandView"), comp=document.getElementById("sswCompView");
+  const bc=document.getElementById("sswTabCand"), bp=document.getElementById("sswTabComp");
+  if(which==="comp"){ if(cand)cand.style.display="none"; if(comp)comp.style.display=""; if(bc)bc.className="btn ghost"; if(bp)bp.className="btn"; renderSSWCompanies(); }
+  else { if(comp)comp.style.display="none"; if(cand)cand.style.display=""; if(bp)bp.className="btn ghost"; if(bc)bc.className="btn"; renderSSW(); }
+}
+function renderSSW(){
+  sswFillSelects();
+  {const _ff=document.getElementById("sswFunnel"); if(_ff)_ff.innerHTML=sswFunnelHTML();}
+  const se=document.getElementById("sswSearch"); const q=(se?se.value:"").toLowerCase().trim();
+  const fse=document.getElementById("sswFilterStatus"); const fst=fse?fse.value:"";
+  const all=db.ssw||[];
+  let list=all.slice().sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+  let tPkg=0,tPaid=0,tDue=0,tCost=0;
+  all.forEach(c=>{tPkg+=Number(c.packageFee||0);tPaid+=sswPaid(c);tDue+=Math.max(0,sswDue(c));tCost+=sswCostTotal(c);});
+  const profit=tPaid-tCost;
+  const sm=document.getElementById("sswSummary");
+  if(sm) sm.innerHTML=`
+    <div class="card accent"><h3>Candidates</h3><div class="num">${all.length}</div></div>
+    <div class="card"><h3>Package Value</h3><div class="num">${fmt(tPkg)}</div></div>
+    <div class="card"><h3>Received</h3><div class="num">${fmt(tPaid)}</div></div>
+    <div class="card"><h3>Due</h3><div class="num" style="${tDue>0?'color:#c00':''}">${fmt(tDue)}</div></div>
+    <div class="card"><h3>Total Cost</h3><div class="num">${fmt(tCost)}</div></div>
+    <div class="card gold"><h3>Net Profit</h3><div class="num" style="${profit<0?'color:#c00':''}">${fmt(profit)}</div></div>`;
+  const fb=document.getElementById("sswCompFilterBar");
+  if(fb){ if(window._sswCompFilter){ fb.innerHTML=`<div class="note" style="margin-bottom:8px;color:var(--navy)">Showing candidates for <b>${admEsc(sswCompanyName(window._sswCompFilter))}</b> · <a href="#" onclick="window._sswCompFilter=null;renderSSW();return false">clear</a></div>`; } else fb.innerHTML=""; }
+  if(window._sswCompFilter) list=list.filter(c=>c.companyId===window._sswCompFilter);
+  if(q) list=list.filter(c=>((c.name||"")+" "+(c.phone||"")+" "+(c.sector||"")+" "+(c.passportNo||"")).toLowerCase().includes(q));
+  if(fst) list=list.filter(c=>(c.status||"")===fst);
+  const body=document.getElementById("sswBody"); if(!body) return;
+  body.innerHTML = list.length ? list.map(c=>{
+    const due=sswDue(c), prof=sswProfit(c);
+    const stOpts=SSW_STATUS.map(s=>`<option ${s===(c.status||"")?"selected":""}>${admEsc(s)}</option>`).join("");
+    return `<tr>
+      <td><a href="#" onclick="sswOpen('${c.id}');return false" style="color:var(--navy);font-weight:600;text-decoration:underline">${admEsc(c.name||"—")}</a><div style="font-size:.8rem;color:#777">${admEsc(c.phone||"")}</div></td>
+      <td>${admEsc(c.sector||"—")}</td>
+      <td>${admEsc(sswCompanyName(c.companyId)||"—")}</td>
+      <td style="font-size:.85rem">${admEsc(sswCertSummary(c))}</td>
+      <td style="text-align:right">${fmt(c.packageFee)}</td>
+      <td style="text-align:right">${fmt(sswPaid(c))}</td>
+      <td style="text-align:right;${due>0?'color:#c00':''}">${fmt(Math.max(0,due))}</td>
+      <td style="text-align:right">${fmt(sswCostTotal(c))}</td>
+      <td style="text-align:right;font-weight:700;${prof<0?'color:#c00':'color:#2e7d32'}">${fmt(prof)}</td>
+      <td class="no-print"><select onchange="sswSetStatus('${c.id}',this.value)" style="max-width:150px">${stOpts}</select></td>
+      <td class="no-print" style="white-space:nowrap"><button class="btn small" onclick="sswOpen('${c.id}')">View</button> <button class="btn small ghost" onclick="sswWhatsApp('${c.id}')">📱</button> <button class="btn small ghost" onclick="sswPrintCandidate('${c.id}')">🖨</button> <button class="btn small ghost" onclick="sswEdit('${c.id}')">Edit</button> <button class="btn small danger" onclick="sswDelete('${c.id}')">Del</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="11" style="text-align:center;color:#777">No SSW candidates yet</td></tr>`;
+  if(window._sswSel && document.getElementById("sswDetail")) sswRenderDetail();
+}
+function _sswReadForm(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:"";};
+  const gc=id=>{const el=document.getElementById(id);return el?el.checked:false;};
+  return { name:g("sswf_name").trim(), phone:g("sswf_phone").trim(), dob:g("sswf_dob"), sector:g("sswf_sector"),
+    companyId:g("sswf_company"), departureDate:g("sswf_departure"), packageFee:Number(g("sswf_fee"))||0, status:g("sswf_status"),
+    agent:g("sswf_agent").trim(), referral:g("sswf_referral").trim(), passportNo:g("sswf_passport").trim(), passportExpiry:g("sswf_passexp"),
+    certs:{ jlpt:g("sswf_jlpt"), jft:gc("sswf_jft"), nat:g("sswf_nat"), skill:gc("sswf_skill") }, note:g("sswf_note").trim() };
+}
+async function addSSW(){
+  const rec=_sswReadForm();
+  if(!rec.name){alert("Enter candidate name");return;}
+  if(window._sswEdit){
+    const c=(db.ssw||[]).find(x=>x.id===window._sswEdit);
+    if(c){ Object.assign(c,rec); logActivity("Edited SSW candidate: "+rec.name); }
+    window._sswEdit=null;
+  } else {
+    db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
+    db.ssw.push(Object.assign({ id:"ssw"+Date.now(), payments:[], costs:[], createdAt:new Date().toISOString() }, rec));
+    logActivity("Added SSW candidate: "+rec.name);
+  }
+  await saveData();
+  sswCancelEdit();
+  renderSSW();
+}
+function sswEdit(id){
+  const c=(db.ssw||[]).find(x=>x.id===id); if(!c) return;
+  sswFillSelects();
+  const sv=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v||"";};
+  const sc=(i,v)=>{const el=document.getElementById(i);if(el)el.checked=!!v;};
+  sv("sswf_name",c.name); sv("sswf_phone",c.phone); sv("sswf_dob",c.dob); sv("sswf_sector",c.sector||SSW_SECTORS[0]);
+  const cmp=document.getElementById("sswf_company"); if(cmp){ cmp.innerHTML=sswCompanyOptions(c.companyId); cmp.value=c.companyId||""; }
+  sv("sswf_departure",c.departureDate); sv("sswf_fee",c.packageFee); sv("sswf_status",c.status||SSW_STATUS[0]);
+  sv("sswf_agent",c.agent); sv("sswf_referral",c.referral); sv("sswf_passport",c.passportNo); sv("sswf_passexp",c.passportExpiry);
+  const e=c.certs||{}; sv("sswf_jlpt",e.jlpt||""); sv("sswf_nat",e.nat||""); sc("sswf_jft",e.jft); sc("sswf_skill",e.skill);
+  sv("sswf_note",c.note);
+  window._sswEdit=id;
+  document.getElementById("sswFormTitle").textContent="Edit SSW Candidate";
+  document.getElementById("sswSaveBtn").textContent="Save Changes";
+  document.getElementById("sswCancelBtn").style.display="";
+  document.getElementById("sec-ssw").scrollIntoView({behavior:"smooth"});
+}
+function sswCancelEdit(){
+  window._sswEdit=null;
+  ["sswf_name","sswf_phone","sswf_dob","sswf_departure","sswf_fee","sswf_agent","sswf_referral","sswf_passport","sswf_passexp","sswf_note"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  ["sswf_jlpt","sswf_nat","sswf_company"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  ["sswf_jft","sswf_skill"].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=false;});
+  const ft=document.getElementById("sswFormTitle"); if(ft)ft.textContent="Add SSW Candidate";
+  const sb=document.getElementById("sswSaveBtn"); if(sb)sb.textContent="＋ Add Candidate";
+  const cb=document.getElementById("sswCancelBtn"); if(cb)cb.style.display="none";
+}
+async function sswSetStatus(id,val){ const c=(db.ssw||[]).find(x=>x.id===id); if(!c) return; c.status=val; await saveData(); renderSSW(); }
+async function sswDelete(id){
+  if(!requireDelete()) return;
+  const c=(db.ssw||[]).find(x=>x.id===id); if(!c) return;
+  if(!confirm("Delete SSW candidate \""+(c.name||"")+"\" with all payments/costs?")) return;
+  db.ssw=(db.ssw||[]).filter(x=>x.id!==id);
+  if(window._sswSel===id){ window._sswSel=null; const d=document.getElementById("sswDetail"); if(d)d.innerHTML=""; }
+  logActivity("Deleted SSW candidate: "+(c.name||""));
+  await saveData(); renderSSW();
+}
+function sswOpen(id){ window._sswSel=id; sswRenderDetail(); const d=document.getElementById("sswDetail"); if(d)d.scrollIntoView({behavior:"smooth"}); }
+function _sswInfoRows(c){
+  const row=(k,v)=>v?`<tr><td style="padding:4px 10px 4px 0;color:#777">${k}</td><td style="padding:4px 0"><b>${admEsc(v)}</b></td></tr>`:"";
+  return `<table style="font-size:.9rem">
+    ${row("Phone",c.phone)}${row("Date of Birth",c.dob)}${row("Sector",c.sector)}
+    ${row("Target Company",sswCompanyName(c.companyId))}${row("Departure Date",c.departureDate)}
+    ${row("Agent / Broker",c.agent)}${row("Referral",c.referral)}
+    ${row("Passport No",c.passportNo)}${row("Passport Expiry",c.passportExpiry)}
+    ${row("Certificates",sswCertSummary(c))}${row("Status",c.status)}${row("Note",c.note)}
+  </table>`;
+}
+function sswRenderDetail(){
+  const d=document.getElementById("sswDetail"); if(!d) return;
+  const c=(db.ssw||[]).find(x=>x.id===window._sswSel);
+  if(!c){ d.innerHTML=""; return; }
+  const today=new Date().toISOString().slice(0,10);
+  const payRows=(c.payments||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(p=>`<tr><td>${admEsc(p.date||"")}</td><td style="text-align:right">${fmt(p.amount)}</td><td>${admEsc(p.note||"")}</td><td class="no-print"><button class="btn small danger" onclick="sswDelPay('${c.id}','${p.id}')">✕</button></td></tr>`).join("")||`<tr><td colspan="4" style="color:#777">No payments yet</td></tr>`;
+  const costRows=(c.costs||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(p=>`<tr><td>${admEsc(p.date||"")}</td><td style="text-align:right">${fmt(p.amount)}</td><td>${admEsc(p.note||"")}</td><td class="no-print"><button class="btn small danger" onclick="sswDelCost('${c.id}','${p.id}')">✕</button></td></tr>`).join("")||`<tr><td colspan="4" style="color:#777">No costs yet</td></tr>`;
+  d.innerHTML=`
+   <div class="formCard">
+     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+       <h3 style="margin:0">${admEsc(c.name||"")} <span style="font-weight:400;color:#777;font-size:.9rem">· ${admEsc(c.sector||"")}</span></h3>
+       <div class="no-print" style="display:flex;gap:6px"><button class="btn small ghost" onclick="sswWhatsApp('${c.id}')">📱 WhatsApp</button><button class="btn small ghost" onclick="sswPrintCandidate('${c.id}')">🖨 Print Profile</button><button class="btn small ghost" onclick="window._sswSel=null;document.getElementById('sswDetail').innerHTML=''">✕ Close</button></div>
+     </div>
+     <div class="grid2" style="margin-top:8px"><div>${_sswInfoRows(c)}</div>
+       <div class="cards">
+         <div class="card"><h3>Package</h3><div class="num">${fmt(c.packageFee)}</div></div>
+         <div class="card"><h3>Received</h3><div class="num">${fmt(sswPaid(c))}</div></div>
+         <div class="card"><h3>Due</h3><div class="num" style="${sswDue(c)>0?'color:#c00':''}">${fmt(Math.max(0,sswDue(c)))}</div></div>
+         <div class="card"><h3>Cost</h3><div class="num">${fmt(sswCostTotal(c))}</div></div>
+         <div class="card gold"><h3>Profit</h3><div class="num" style="${sswProfit(c)<0?'color:#c00':''}">${fmt(sswProfit(c))}</div></div>
+       </div>
+     </div>
+     <div class="grid2" style="margin-top:8px">
+       <div>
+         <h4 style="color:var(--navy);margin:6px 0">Payments Received</h4>
+         <div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+           <input type="number" id="sswpay_amt" placeholder="Amount" style="width:110px">
+           <input type="date" id="sswpay_date" value="${today}">
+           <input id="sswpay_note" placeholder="Note" style="flex:1;min-width:90px">
+           <button class="btn small" onclick="sswAddPay('${c.id}')">＋ Add</button>
+         </div>
+         <div class="tablewrap"><table><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th class="no-print"></th></tr></thead><tbody>${payRows}</tbody></table></div>
+       </div>
+       <div>
+         <h4 style="color:var(--navy);margin:6px 0">Costs / Khoroch</h4>
+         <div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+           <input type="number" id="sswcost_amt" placeholder="Amount" style="width:110px">
+           <input type="date" id="sswcost_date" value="${today}">
+           <input id="sswcost_note" placeholder="Note" style="flex:1;min-width:90px">
+           <button class="btn small" onclick="sswAddCost('${c.id}')">＋ Add</button>
+         </div>
+         <div class="tablewrap"><table><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th class="no-print"></th></tr></thead><tbody>${costRows}</tbody></table></div>
+       </div>
+     </div>
+     <div class="note" style="color:#777;margin-top:10px">💡 SSW profit (Received − Cost) automatically Investment &amp; Profit section-e company profit-e jog hoy.</div>
+   </div>`;
+}
+async function sswAddPay(id){
+  const c=(db.ssw||[]).find(x=>x.id===id); if(!c) return;
+  const amt=Number(document.getElementById("sswpay_amt").value)||0;
+  if(!amt){alert("Enter amount");return;}
+  c.payments=c.payments||[];
+  c.payments.push({id:"p"+Date.now(), amount:amt, date:document.getElementById("sswpay_date").value||new Date().toISOString().slice(0,10), note:(document.getElementById("sswpay_note").value||"").trim()});
+  logActivity("SSW payment "+fmt(amt)+" — "+(c.name||""));
+  await saveData(); renderSSW();
+}
+async function sswAddCost(id){
+  const c=(db.ssw||[]).find(x=>x.id===id); if(!c) return;
+  const amt=Number(document.getElementById("sswcost_amt").value)||0;
+  if(!amt){alert("Enter amount");return;}
+  c.costs=c.costs||[];
+  c.costs.push({id:"x"+Date.now(), amount:amt, date:document.getElementById("sswcost_date").value||new Date().toISOString().slice(0,10), note:(document.getElementById("sswcost_note").value||"").trim()});
+  logActivity("SSW cost "+fmt(amt)+" — "+(c.name||""));
+  await saveData(); renderSSW();
+}
+async function sswDelPay(id,pid){ if(!requireDelete())return; const c=(db.ssw||[]).find(x=>x.id===id); if(!c)return; c.payments=(c.payments||[]).filter(p=>p.id!==pid); await saveData(); renderSSW(); }
+async function sswDelCost(id,pid){ if(!requireDelete())return; const c=(db.ssw||[]).find(x=>x.id===id); if(!c)return; c.costs=(c.costs||[]).filter(p=>p.id!==pid); await saveData(); renderSSW(); }
+
+/* ---- SSW Companies ---- */
+function renderSSWCompanies(){
+  sswFillSelects();
+  {const _g=document.getElementById("swcGap"); if(_g)_g.innerHTML=companyGapHTML();}
+  const list=(db.sswCompanies||[]).slice().sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  let tDemand=0,tAssigned=0;
+  list.forEach(co=>{tDemand+=Number(co.demand||0);tAssigned+=sswAssignedCount(co.id);});
+  const sm=document.getElementById("swcSummary");
+  if(sm) sm.innerHTML=`
+    <div class="card accent"><h3>Companies</h3><div class="num">${list.length}</div></div>
+    <div class="card"><h3>Total Demand</h3><div class="num">${tDemand}</div></div>
+    <div class="card"><h3>Assigned</h3><div class="num">${tAssigned}</div></div>
+    <div class="card gold"><h3>Remaining</h3><div class="num">${Math.max(0,tDemand-tAssigned)}</div></div>`;
+  const body=document.getElementById("swcBody"); if(!body) return;
+  body.innerHTML=list.length? list.map(co=>{
+    const asg=sswAssignedCount(co.id); const rem=Math.max(0,Number(co.demand||0)-asg);
+    return `<tr>
+      <td><a href="#" onclick="sswCompOpen('${co.id}');return false" style="color:var(--navy);font-weight:600;text-decoration:underline">${admEsc(co.name||"—")}</a></td>
+      <td>${admEsc(co.sector||"—")}</td>
+      <td>${admEsc(co.contactPerson||"—")}</td>
+      <td>${admEsc(co.phone||"—")}</td>
+      <td style="text-align:right">${Number(co.demand||0)}</td>
+      <td style="text-align:right">${asg}</td>
+      <td style="text-align:right;${rem>0?'color:#2e7d32':''}">${rem}</td>
+      <td class="no-print" style="white-space:nowrap"><button class="btn small" onclick="sswCompOpen('${co.id}')">View</button> <button class="btn small ghost" onclick="sswCompEdit('${co.id}')">Edit</button> <button class="btn small danger" onclick="sswCompDelete('${co.id}')">Del</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="8" style="text-align:center;color:#777">No companies yet</td></tr>`;
+  if(window._swcSel) sswCompRenderDetail();
+}
+async function addSSWCompany(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:"";};
+  const name=g("swc_name").trim();
+  if(!name){alert("Enter company name");return;}
+  const rec={ name, sector:g("swc_sector"), contactPerson:g("swc_person").trim(), phone:g("swc_phone").trim(), email:g("swc_email").trim(), demand:Number(g("swc_demand"))||0, note:g("swc_note").trim() };
+  if(window._swcEdit){
+    const co=(db.sswCompanies||[]).find(x=>x.id===window._swcEdit);
+    if(co){ Object.assign(co,rec); logActivity("Edited SSW company: "+name); }
+    window._swcEdit=null;
+  } else {
+    db.sswCompanies=db.sswCompanies||[];
+    db.sswCompanies.push(Object.assign({ id:"co"+Date.now(), createdAt:new Date().toISOString() }, rec));
+    logActivity("Added SSW company: "+name);
+  }
+  await saveData();
+  sswCompCancelEdit();
+  renderSSWCompanies();
+}
+function sswCompEdit(id){
+  const co=(db.sswCompanies||[]).find(x=>x.id===id); if(!co) return;
+  sswFillSelects();
+  const sv=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v||"";};
+  sv("swc_name",co.name); sv("swc_sector",co.sector||SSW_SECTORS[0]); sv("swc_person",co.contactPerson);
+  sv("swc_phone",co.phone); sv("swc_email",co.email); sv("swc_demand",co.demand); sv("swc_note",co.note);
+  window._swcEdit=id;
+  document.getElementById("swcFormTitle").textContent="Edit Company";
+  document.getElementById("swcSaveBtn").textContent="Save Changes";
+  document.getElementById("swcCancelBtn").style.display="";
+  document.getElementById("sec-ssw").scrollIntoView({behavior:"smooth"});
+}
+function sswCompCancelEdit(){
+  window._swcEdit=null;
+  ["swc_name","swc_person","swc_phone","swc_email","swc_demand","swc_note"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  const ft=document.getElementById("swcFormTitle"); if(ft)ft.textContent="Add Company";
+  const sb=document.getElementById("swcSaveBtn"); if(sb)sb.textContent="＋ Add Company";
+  const cb=document.getElementById("swcCancelBtn"); if(cb)cb.style.display="none";
+}
+async function sswCompDelete(id){
+  if(!requireDelete()) return;
+  const co=(db.sswCompanies||[]).find(x=>x.id===id); if(!co) return;
+  const asg=sswAssignedCount(id);
+  if(!confirm("Delete company \""+(co.name||"")+"\"?"+(asg?(" "+asg+" candidate(s) will be unlinked."):""))) return;
+  (db.ssw||[]).forEach(c=>{ if(c.companyId===id) c.companyId=""; });
+  db.sswCompanies=(db.sswCompanies||[]).filter(x=>x.id!==id);
+  if(window._swcSel===id){ window._swcSel=null; const d=document.getElementById("swcDetail"); if(d)d.innerHTML=""; }
+  logActivity("Deleted SSW company: "+(co.name||""));
+  await saveData(); renderSSWCompanies();
+}
+function sswCompOpen(id){ window._swcSel=id; sswCompRenderDetail(); const d=document.getElementById("swcDetail"); if(d)d.scrollIntoView({behavior:"smooth"}); }
+function sswCompRenderDetail(){
+  const d=document.getElementById("swcDetail"); if(!d) return;
+  const co=(db.sswCompanies||[]).find(x=>x.id===window._swcSel);
+  if(!co){ d.innerHTML=""; return; }
+  const cands=(db.ssw||[]).filter(c=>c.companyId===co.id);
+  const rows=cands.length? cands.map(c=>`<tr><td>${admEsc(c.name||"")}</td><td>${admEsc(c.phone||"")}</td><td>${admEsc(sswCertSummary(c))}</td><td>${admEsc(c.status||"")}</td></tr>`).join("") : `<tr><td colspan="4" style="color:#777">No candidates assigned</td></tr>`;
+  d.innerHTML=`
+   <div class="formCard">
+     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+       <h3 style="margin:0">${admEsc(co.name||"")} <span style="font-weight:400;color:#777;font-size:.9rem">· ${admEsc(co.sector||"")}</span></h3>
+       <div class="no-print" style="display:flex;gap:6px"><button class="btn small ghost" onclick="window._sswCompFilter='${co.id}';sswTab('cand')">👤 View in Candidates</button><button class="btn small ghost" onclick="window._swcSel=null;document.getElementById('swcDetail').innerHTML=''">✕ Close</button></div>
+     </div>
+     <div style="font-size:.9rem;color:#555;margin:6px 0">${admEsc(co.contactPerson||"")}${co.phone?(" · "+admEsc(co.phone)):""}${co.email?(" · "+admEsc(co.email)):""}${co.note?("<br>"+admEsc(co.note)):""}</div>
+     <div style="margin:6px 0"><b>Demand:</b> ${Number(co.demand||0)} · <b>Assigned:</b> ${cands.length} · <b>Remaining:</b> ${Math.max(0,Number(co.demand||0)-cands.length)}</div>
+     <div class="tablewrap"><table><thead><tr><th>Candidate</th><th>Phone</th><th>Certificates</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
+   </div>`;
+}
+
+/* ---- SSW Print & Report ---- */
+function sswPrintCandidate(id){
+  const c=(db.ssw||[]).find(x=>x.id===id); if(!c) return;
+  const a=db.agency;
+  const head=`<div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
+    <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
+    <div style="text-align:right"><b>SSW CANDIDATE PROFILE</b><br><span style="font-size:.8rem">${admEsc(c.name||"")}</span><br><span style="font-size:.7rem;color:#777">${new Date().toISOString().slice(0,10)}</span></div></div>`;
+  const payRows=(c.payments||[]).slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(p=>`<tr><td style="padding:5px">${admEsc(p.date||"")}</td><td style="padding:5px;text-align:right">${fmt(p.amount)}</td><td style="padding:5px">${admEsc(p.note||"")}</td></tr>`).join("")||`<tr><td colspan="3" style="padding:5px;color:#777">No payments</td></tr>`;
+  const costRows=(c.costs||[]).slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(p=>`<tr><td style="padding:5px">${admEsc(p.date||"")}</td><td style="padding:5px;text-align:right">${fmt(p.amount)}</td><td style="padding:5px">${admEsc(p.note||"")}</td></tr>`).join("")||`<tr><td colspan="3" style="padding:5px;color:#777">No costs</td></tr>`;
+  document.getElementById("sswPrintBox").innerHTML=head+
+    `<h3>Candidate Information</h3>${_sswInfoRows(c)}
+     <div class="cards" style="margin:12px 0">
+       <div class="card"><h3>Package</h3><div class="num">${fmt(c.packageFee)}</div></div>
+       <div class="card"><h3>Received</h3><div class="num">${fmt(sswPaid(c))}</div></div>
+       <div class="card"><h3>Due</h3><div class="num">${fmt(Math.max(0,sswDue(c)))}</div></div>
+       <div class="card"><h3>Cost</h3><div class="num">${fmt(sswCostTotal(c))}</div></div>
+       <div class="card"><h3>Profit</h3><div class="num">${fmt(sswProfit(c))}</div></div>
+     </div>
+     <h3>Payments Received</h3><table style="width:100%"><tr><th style="text-align:left;padding:5px">Date</th><th style="text-align:right;padding:5px">Amount</th><th style="text-align:left;padding:5px">Note</th></tr>${payRows}</table>
+     <h3 style="margin-top:12px">Costs</h3><table style="width:100%"><tr><th style="text-align:left;padding:5px">Date</th><th style="text-align:right;padding:5px">Amount</th><th style="text-align:left;padding:5px">Note</th></tr>${costRows}</table>
+     <div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("sec-sswprint").classList.add("active");
+  logActivity("Printed SSW profile: "+(c.name||""));
+}
+function sswReport(){
+  const rows=(db.ssw||[]).map(c=>[admEsc(c.name||""), admEsc(c.sector||"—"), admEsc(sswCompanyName(c.companyId)||"—"), admEsc(sswCertSummary(c)), fmt(c.packageFee), fmt(sswPaid(c)), fmt(Math.max(0,sswDue(c))), fmt(sswCostTotal(c)), fmt(sswProfit(c)), admEsc(c.status||"")]);
+  let tPkg=0,tPaid=0,tDue=0,tCost=0;
+  (db.ssw||[]).forEach(c=>{tPkg+=Number(c.packageFee||0);tPaid+=sswPaid(c);tDue+=Math.max(0,sswDue(c));tCost+=sswCostTotal(c);});
+  const extra=`<div style="margin-top:12px;font-size:.95rem"><b>Totals:</b> Package ${fmt(tPkg)} &nbsp;·&nbsp; Received ${fmt(tPaid)} &nbsp;·&nbsp; Due ${fmt(tDue)} &nbsp;·&nbsp; Cost ${fmt(tCost)} &nbsp;·&nbsp; <b>Net Profit ${fmt(tPaid-tCost)}</b></div>`;
+  printGenericReport("ssw","SSW Candidates Report",(db.ssw||[]).length+" candidates",["Name","Sector","Company","Certificates","Package","Paid","Due","Cost","Profit","Status"],rows,extra);
+}
+function sswCompaniesReport(){
+  const rows=(db.sswCompanies||[]).map(co=>[admEsc(co.name||""),admEsc(co.sector||"—"),admEsc(co.contactPerson||"—"),admEsc(co.phone||"—"),String(Number(co.demand||0)),String(sswAssignedCount(co.id)),String(Math.max(0,Number(co.demand||0)-sswAssignedCount(co.id)))]);
+  printGenericReport("ssw","SSW Companies Report",(db.sswCompanies||[]).length+" companies",["Company","Sector","Contact","Phone","Demand","Assigned","Remaining"],rows);
+}
+/* ===== END SSW ===== */
+
+/* ===== v16 EXTRAS ===== */
+function waOpen(phone,msg){
+  if(!phone){alert("No phone number on file");return;}
+  let p=String(phone).replace(/[^0-9+]/g,"");
+  if(p.startsWith("0")) p="88"+p;
+  p=p.replace(/^\+/,"");
+  window.open("https://wa.me/"+p+"?text="+encodeURIComponent(msg||""),"_blank");
+}
+function sswWhatsApp(id){
+  const c=(db.ssw||[]).find(x=>x.id===id); if(!c) return;
+  const due=Math.max(0,sswDue(c));
+  const msg=`Dear ${c.name||""}, this is a message from ${db.agency.name} regarding your SSW process.`+(due>0?(" Your current balance due is "+fmt(due)+". Please contact us to settle it. Thank you."):" Thank you.");
+  waOpen(c.phone,msg);
+  logActivity("SSW WhatsApp: "+(c.name||""));
+}
+function _daysTo(dateStr){ if(!dateStr) return null; const d=new Date(dateStr); if(isNaN(d.getTime())) return null; return Math.ceil((d - new Date())/(1000*60*60*24)); }
+function renderExpiryAlerts(){
+  const box=document.getElementById("expiryAlerts"); if(!box) return;
+  const items=[];
+  (db.ssw||[]).forEach(c=>{
+    const dp=_daysTo(c.passportExpiry);
+    if(dp!==null && dp<=180){ items.push({name:c.name, type:"Passport", days:dp, extra:(dp<0?("Passport expired "+(-dp)+"d ago"):("Passport expires in "+dp+"d")), cls:(dp<0?"bad":(dp<=60?"warn":""))}); }
+    const dd=_daysTo(c.departureDate);
+    if(dd!==null && dd>=0 && dd<=30){ items.push({name:c.name, type:"Departure", days:dd, extra:("Departs in "+dd+"d"), cls:"warn"}); }
+  });
+  items.sort((a,b)=>a.days-b.days);
+  if(!items.length){ box.innerHTML=""; return; }
+  box.innerHTML=`<div class="formCard" style="border:1px solid var(--warn);background:var(--warn-soft)">
+    <h3 style="margin:0 0 8px;color:#7a5a08">⏰ Expiry & Departure Alerts (${items.length})</h3>
+    <div style="display:flex;flex-direction:column;gap:6px">${items.slice(0,15).map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:.86rem"><span><b>${admEsc(it.name||"—")}</b> · ${it.type}</span><span style="color:${it.cls==='bad'?'#b00020':'#7a5a08'};font-weight:700">${admEsc(it.extra)}</span></div>`).join("")}</div>
+  </div>`;
+}
+function sswFunnelHTML(){
+  const counts=SSW_STATUS.map(s=>({label:s, value:(db.ssw||[]).filter(c=>(c.status||"")===s).length}));
+  if(!counts.some(c=>c.value>0)) return '';
+  return `<div class="formCard"><h3 style="margin:0 0 10px;color:var(--navy)">SSW Pipeline (candidates per stage)</h3>${niceHBar(counts.map(c=>({label:c.label,value:c.value})),{raw:true})}</div>`;
+}
+function companyGapHTML(){
+  const list=(db.sswCompanies||[]);
+  if(!list.length) return '';
+  const items=list.map(co=>({label:co.name||"—", value:Math.max(0,Number(co.demand||0)-sswAssignedCount(co.id))})).filter(x=>x.value>0);
+  if(!items.length) return `<div class="formCard"><h3 style="margin:0;color:var(--navy)">Demand vs Supply</h3><div style="color:#777;margin-top:6px">All company demands are fully assigned ✓</div></div>`;
+  return `<div class="formCard"><h3 style="margin:0 0 10px;color:var(--navy)">Demand Gap — remaining openings</h3>${niceHBar(items,{raw:true})}</div>`;
+}
+function printMonthlyPL(){
+  const mEl=document.getElementById("rep_month");
+  const mk=(mEl&&mEl.value)?mEl.value:new Date().toISOString().slice(0,7);
+  const f=partnerFinance(mk);
+  const a=db.agency;
+  let label=mk; try{ label=new Date(mk+"-01").toLocaleString('en',{month:'long',year:'numeric'}); }catch(e){}
+  const row=(k,v,b)=>`<tr><td style="padding:6px">${k}</td><td style="padding:6px;text-align:right">${b?"<b>":""}${fmt(v)}${b?"</b>":""}</td></tr>`;
+  const head=`<div class="paperWatermark" style="background-image:url('${LOGO_DATA}')"></div>
+    <div class="rhead"><div style="display:flex;align-items:center;gap:12px"><img src="${LOGO_DATA}" style="width:56px;height:56px;object-fit:contain"><div><h2 style="margin:0">${a.name}</h2><div style="font-size:.74rem;color:#555">${a.address}<br>${a.phone} &bull; ${a.email}</div></div></div>
+    <div style="text-align:right"><b>PROFIT &amp; LOSS STATEMENT</b><br><span style="font-size:.8rem">${label}</span><br><span style="font-size:.7rem;color:#777">Generated: ${new Date().toISOString().slice(0,10)}</span></div></div>`;
+  document.getElementById("sswPrintBox").innerHTML=head+
+    `<h3>Income</h3><table style="width:100%">
+      ${row("Student Fees",f.cM)}${row("SSW Payments",f.sswM||0)}${row("Other Income",f.oM)}${row("Total Income",f.incM,true)}
+     </table>
+     <h3 style="margin-top:14px">Expenses</h3><table style="width:100%">
+      ${row("Expenses + Salary (incl. SSW costs)",f.eM,true)}
+      <tr><td style="padding:4px 6px 4px 18px;color:#777;font-size:.85rem">— of which SSW costs</td><td style="padding:4px 6px;text-align:right;color:#777">${fmt(f.sswCM||0)}</td></tr>
+     </table>
+     <h3 style="margin-top:14px">Result</h3><table style="width:100%">
+      ${row("Net Profit / Loss",f.netM,true)}
+     </table>
+     <div class="signrow"><span>Prepared By</span><span>Authorized</span></div>`;
+  window._printReturnTab="reports";
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("sec-sswprint").classList.add("active");
+  logActivity("Printed Monthly P/L: "+label);
+}
+/* ===== END v16 ===== */
 function partnerFinance(monthKey){
   let cM=0,cA=0;
   (db.students||[]).forEach(s=>(s.payments||[]).forEach(p=>{ const amt=Number(p.amount||0); cA+=amt; if((p.date||"").slice(0,7)===monthKey)cM+=amt; }));
@@ -3632,8 +4208,13 @@ function partnerFinance(monthKey){
   let eM=0,eA=0;
   (db.expenses||[]).forEach(e=>{ const amt=Number(e.amount||0); eA+=amt; if((e.date||"").slice(0,7)===monthKey)eM+=amt; });
   (db.salaries||[]).forEach(x=>{ if(x.status==="Paid"){ const amt=salNet(x); eA+=amt; const mkey=(x.month||x.datePaid||"").slice(0,7); if(mkey===monthKey)eM+=amt; } });
-  const incM=cM+oM, incA=cA+oA;
-  return {cM,cA,oM,oA,incM,incA,eM,eA,netM:incM-eM,netA:incA-eA};
+  let sswM=0,sswA=0;
+  (db.ssw||[]).forEach(c=>(c.payments||[]).forEach(p=>{ const amt=Number(p.amount||0); sswA+=amt; if((p.date||"").slice(0,7)===monthKey)sswM+=amt; }));
+  let sswCM=0,sswCA=0;
+  (db.ssw||[]).forEach(c=>(c.costs||[]).forEach(x=>{ const amt=Number(x.amount||0); sswCA+=amt; if((x.date||"").slice(0,7)===monthKey)sswCM+=amt; }));
+  eM+=sswCM; eA+=sswCA;
+  const incM=cM+oM+sswM, incA=cA+oA+sswA;
+  return {cM,cA,oM,oA,sswM,sswA,sswCM,sswCA,incM,incA,eM,eA,netM:incM-eM,netA:incA-eA};
 }
 function renderPartnerCalc(){
   const box=document.getElementById("pt_calc"); if(!box) return;
@@ -3666,8 +4247,10 @@ function renderPartnerCalc(){
       <tr><th style="text-align:left;padding:5px"></th><th style="text-align:right;padding:5px">${monthLabel}</th><th style="text-align:right;padding:5px">All-Time</th></tr>
       <tr><td style="padding:5px">Student Fees</td><td style="padding:5px;text-align:right">${fmt(f.cM)}</td><td style="padding:5px;text-align:right">${fmt(f.cA)}</td></tr>
       <tr><td style="padding:5px">Other Income</td><td style="padding:5px;text-align:right">${fmt(f.oM)}</td><td style="padding:5px;text-align:right">${fmt(f.oA)}</td></tr>
+      <tr><td style="padding:5px">SSW Payments</td><td style="padding:5px;text-align:right">${fmt(f.sswM||0)}</td><td style="padding:5px;text-align:right">${fmt(f.sswA||0)}</td></tr>
       <tr><td style="padding:5px"><b>Total Income</b></td><td style="padding:5px;text-align:right"><b>${fmt(f.incM)}</b></td><td style="padding:5px;text-align:right"><b>${fmt(f.incA)}</b></td></tr>
       <tr><td style="padding:5px">Total Expenses</td><td style="padding:5px;text-align:right">${fmt(f.eM)}</td><td style="padding:5px;text-align:right">${fmt(f.eA)}</td></tr>
+      <tr><td style="padding:5px 5px 5px 18px;color:#777;font-size:.85rem">— incl. SSW Costs</td><td style="padding:5px;text-align:right;color:#777">${fmt(f.sswCM||0)}</td><td style="padding:5px;text-align:right;color:#777">${fmt(f.sswCA||0)}</td></tr>
       <tr><td style="padding:5px"><b>Net Profit / Loss</b></td><td style="padding:5px;text-align:right"><b>${fmt(f.netM)}</b>${lossTag(f.netM)}</td><td style="padding:5px;text-align:right"><b>${fmt(f.netA)}</b>${lossTag(f.netA)}</td></tr>
     </table></div>
     <h4 style="color:var(--navy);margin:0 0 6px">Partner Accounts ${ok?'':'<span style="color:#c00;font-size:.8rem">(fix % to 100)</span>'}</h4>
@@ -3904,7 +4487,7 @@ async function restoreAutoSnap(key, date){
     const parsed=JSON.parse(res.value);
     if(!parsed || !parsed.students || !parsed.users){alert("That backup is empty or invalid");return;}
     db=parsed;
-    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.autoSnapIndex=db.autoSnapIndex||[];
+    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.autoSnapIndex=db.autoSnapIndex||[];
     logActivity("Restored from automatic backup: "+date);
     await saveData();
     alert("Data restored from "+date);
@@ -4404,7 +4987,7 @@ let _stEditId=null;
 function renderSalary(){
   const mEl=document.getElementById("pr_month"); if(mEl && !mEl.value) mEl.value=new Date().toISOString().slice(0,7);
   const month=mEl?mEl.value:"";
-  db.staff=db.staff||[]; db.salaries=db.salaries||[];
+  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.salaries=db.salaries||[];
   const sb=document.getElementById("staffListBody");
   if(sb){ sb.innerHTML=`<div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:5px">Name</th><th style="text-align:left;padding:5px">Role</th><th style="text-align:right;padding:5px">Monthly</th><th style="padding:5px">Status</th><th class="no-print"></th></tr>${db.staff.length?db.staff.map(st=>`<tr><td style="padding:5px"><a href="#" onclick="showStaffHistory('${st.id}');return false" style="color:var(--navy);font-weight:600;text-decoration:underline;cursor:pointer">${admEsc(st.name)}</a></td><td style="padding:5px">${admEsc(st.role||"")}</td><td style="padding:5px;text-align:right">${fmt(st.monthlySalary)}</td><td style="padding:5px;text-align:center"><span class="badge" style="background:${st.active!==false?'var(--good)':'#999'};color:#fff">${st.active!==false?'Active':'Inactive'}</span></td><td class="no-print" style="padding:5px"><button class="btn small" onclick="editStaff('${st.id}')">Edit</button> <button class="btn small ghost" onclick="toggleStaffActive('${st.id}')">${st.active!==false?'Off':'On'}</button> ${canDelete()?`<button class="btn small danger" onclick="deleteStaff('${st.id}')">Del</button>`:''}</td></tr>`).join(""):`<tr><td colspan="5" style="padding:5px">No staff yet — add below</td></tr>`}</table></div>`; }
   const recs=db.salaries.filter(x=>x.month===month);
@@ -4416,7 +4999,7 @@ function renderSalary(){
 }
 function generatePayroll(){
   const month=document.getElementById("pr_month").value; if(!month){alert("Select a month");return;}
-  db.staff=db.staff||[]; db.salaries=db.salaries||[];
+  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.salaries=db.salaries||[];
   const active=db.staff.filter(s=>s.active!==false);
   if(!active.length){alert("No active staff. Age Staff Setup-e staff add korun.");return;}
   let added=0;
@@ -4447,7 +5030,7 @@ function addStaff(){
   const g=id=>document.getElementById(id).value;
   const name=g("st_name").trim(); if(!name){alert("Enter staff name");return;}
   const sal=Number(g("st_salary"))||0;
-  db.staff=db.staff||[];
+  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
   if(_stEditId){ const s=db.staff.find(x=>x.id===_stEditId); if(s){ Object.assign(s,{name,role:g("st_role").trim(),monthlySalary:sal,phone:g("st_phone").trim(),joinDate:g("st_join")}); } _stEditId=null; const en=document.getElementById("st_edit_note"); if(en)en.textContent=""; }
   else { db.staff.push({id:"stf"+Date.now(),name,role:g("st_role").trim(),monthlySalary:sal,phone:g("st_phone").trim(),joinDate:g("st_join"),active:true}); }
   logActivity("Staff saved: "+name); saveData();
