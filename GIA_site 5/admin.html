@@ -496,7 +496,7 @@ body.dark-theme .panelTitle h2{color:#eaf0ff!important}
 @keyframes l2hue{to{filter:hue-rotate(360deg)}}
 .gl-glow{position:absolute;z-index:1;border-radius:50%;pointer-events:none;animation:glRise linear infinite}
 @keyframes glRise{from{transform:translateY(0)}to{transform:translateY(-110vh)}}
-</style></head>
+</style><style id="giaPwToggle">#loginOverlay .l2-eye{font-size:10px;font-weight:800;letter-spacing:1px;color:#8fe3ff;cursor:pointer;user-select:none;padding:2px 6px;border:1px solid rgba(143,227,255,.4);border-radius:6px}#loginOverlay .l2-eye:hover{background:rgba(143,227,255,.15)}</style></head>
 <body>
 
 <div id="loadingScreen"><div class="spin"></div><div>Loading...</div></div>
@@ -516,7 +516,7 @@ body.dark-theme .panelTitle h2{color:#eaf0ff!important}
         <span class="l2-ic">🔒</span>
         <input id="loginPass" type="password" placeholder=" " onkeydown="if(event.key==='Enter')doLogin()">
         <label>Password</label>
-        <span class="l2-eye" onclick="var i=document.getElementById('loginPass');i.type=i.type==='password'?'text':'password'">👁️</span>
+        <span class="l2-eye" id="pwToggle" onclick="togglePw()">SHOW</span>
       </div>
       <div class="l2-row">
         <label class="l2-rm"><input type="checkbox" id="rememberMe"> Remember me</label>
@@ -4835,36 +4835,96 @@ function _certFrame(o){
     </div>
   </div>`;
 }
+function _certPhotoPick(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=function(e){ const img=new Image(); img.onload=function(){ let w=img.width,h=img.height,max=300; if(w>max){h=h*max/w;w=max;} const cv=document.createElement('canvas'); cv.width=w;cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); window._certPhoto=cv.toDataURL('image/jpeg',0.85); const pv=document.getElementById('certPhotoPrev'); if(pv)pv.innerHTML='<img src="'+window._certPhoto+'" style="width:100%;height:100%;object-fit:cover">'; }; img.src=e.target.result; };
+  rd.readAsDataURL(f);
+}
 function _certPicker(){
   const opts=(db.students||[]).map(s=>`<option value="${s.id}">${admEsc(s.name)} (${admEsc(s.sid||"")})</option>`).join("");
   return `<div class="formCard glassPanel"><h3 style="margin:0 0 10px">Student Certificate</h3>
     <div class="grid3">
-      <div class="field"><label>Certificate Type</label><select id="cert_type"><option value="completion">Course Completion</option><option value="graduation">Graduation / Diploma</option></select></div>
+      <div class="field"><label>Certificate Type</label><select id="cert_type"><option value="completion">Course Completion</option><option value="graduation">Graduation / Diploma</option><option value="proficiency">Japanese Proficiency (合格証)</option></select></div>
       <div class="field"><label>Student</label><select id="cert_student"><option value="">— select —</option>${opts}</select></div>
       <div class="field"><label>Course / Program</label><input id="cert_course" placeholder="e.g. JLPT N5"></div>
+      <div class="field"><label>Level (級) — proficiency</label><input id="cert_level" placeholder="e.g. N4 (JLPT N4 equivalent)"></div>
+      <div class="field"><label>Examinee / Roll No</label><input id="cert_roll" placeholder="e.g. 2025-000123"></div>
+      <div class="field"><label>Date of Birth</label><input type="date" id="cert_dob"></div>
+      <div class="field"><label>Place of Test</label><input id="cert_place" placeholder="e.g. Chattogram, Bangladesh"></div>
       <div class="field"><label>Result / Grade (optional)</label><input id="cert_grade" placeholder="e.g. Passed / A+"></div>
-      <div class="field"><label>Session / Year (optional)</label><input id="cert_session" placeholder="e.g. 2024–2025"></div>
+      <div class="field"><label>Session / Year (optional)</label><input id="cert_session" placeholder="e.g. 2025-1"></div>
     </div>
-    <button class="btn" style="margin-top:12px" onclick="studentCert()">Generate Certificate</button></div>`;
+    <div style="display:flex;gap:14px;align-items:center;margin-top:10px">
+      <div id="certPhotoPrev" style="width:70px;height:84px;border-radius:6px;overflow:hidden;background:var(--gp);border:2px solid var(--gb);display:grid;place-items:center;color:var(--muted);font-size:.62rem">No photo</div>
+      <label class="btn small ghost" style="display:inline-block">📷 Photo (for 合格証)<input type="file" accept="image/*" style="display:none" onchange="_certPhotoPick(this)"></label>
+      <button class="btn" onclick="studentCert()">Generate Certificate</button>
+    </div></div>`;
 }
 function studentCert(){
   const id=document.getElementById("cert_student").value; const s=(db.students||[]).find(x=>x.id===id);
   if(!s){alert("Select a student");return;}
-  const typeEl=document.getElementById("cert_type"); const type=typeEl?typeEl.value:"completion";
-  const a=db.agency; const course=document.getElementById("cert_course").value.trim()||s.course||"the program";
-  const grade=document.getElementById("cert_grade").value.trim();
-  const sesEl=document.getElementById("cert_session"); const session=sesEl?sesEl.value.trim():"";
-  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  const no=(type==="graduation"?"GRD-":"CMP-")+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
+  const g=i=>{const el=document.getElementById(i);return el?el.value.trim():"";};
+  const type=g("cert_type")||(document.getElementById("cert_type")?document.getElementById("cert_type").value:"completion");
+  const a=db.agency; const course=g("cert_course")||s.course||"the program";
+  const grade=g("cert_grade"); const session=g("cert_session");
+  const today=new Date(); const todayStr=today.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const yr=today.getFullYear();
+
+  if(type==="proficiency"){
+    const level=g("cert_level")||s.jlpt||"N5"; const roll=g("cert_roll")||s.sid||"—";
+    const dob=g("cert_dob")||""; const place=g("cert_place")||"Chattogram, Bangladesh";
+    const no="JP-"+yr+"-"+String(Date.now()).slice(-5);
+    const dateJP=today.getFullYear()+"年"+(today.getMonth()+1)+"月"+today.getDate()+"日";
+    const photo=window._certPhoto?`<img src="${window._certPhoto}" style="width:100%;height:100%;object-fit:cover">`:`<div style="width:100%;height:100%;display:grid;place-items:center;background:#e8ecff;color:#1F3864;font-weight:800;font-size:2rem">${(s.name||"?").charAt(0).toUpperCase()}</div>`;
+    _showDoc(`<div style="width:600px;max-width:100%;margin:0 auto;position:relative;background:linear-gradient(180deg,#fffdf8,#ffffff);padding:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:'Segoe UI',system-ui,sans-serif;color:#1c2436">
+      <div style="border:3px solid #1F3864;padding:30px 36px;position:relative;overflow:hidden">
+        <div style="position:absolute;inset:6px;border:1px solid #b8860b;pointer-events:none"></div>
+        <img src="${LOGO_DATA}" style="position:absolute;top:52%;left:50%;transform:translate(-50%,-50%);width:320px;height:320px;object-fit:contain;opacity:.05;pointer-events:none">
+        <div style="text-align:center;position:relative">
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px">
+            <img src="${LOGO_DATA}" style="width:50px;height:50px;object-fit:contain">
+            <div><div style="font-family:'Noto Serif JP',Georgia,serif;font-size:2.5rem;font-weight:800;color:#1F3864;letter-spacing:10px;line-height:1">合格証</div>
+            <div style="font-size:.95rem;letter-spacing:4px;color:#b8860b">CERTIFICATE OF PROFICIENCY</div></div>
+            <div style="width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#f06b6b,#c0392b);box-shadow:0 0 14px rgba(224,59,59,.5)"></div>
+          </div>
+          <div style="height:2px;background:linear-gradient(90deg,transparent,#1F3864 20%,#b8860b 50%,#1F3864 80%,transparent);margin:14px 0 18px"></div>
+        </div>
+        <div style="display:flex;gap:22px;position:relative">
+          <div style="flex:1">
+            <table style="width:100%;font-size:.87rem;border-collapse:collapse">
+              <tr><td style="color:#8890a6;padding:6px 0;width:44%">級 &nbsp;Level</td><td style="font-weight:700;color:#1F3864">${admEsc(level)}</td></tr>
+              <tr><td style="color:#8890a6;padding:6px 0">受験番号 &nbsp;Examinee No</td><td style="font-weight:700">${admEsc(roll)}</td></tr>
+              <tr><td style="color:#8890a6;padding:6px 0">氏名 &nbsp;Name</td><td style="font-weight:800;font-size:1.05rem;color:#1F3864">${admEsc(s.name||"")}</td></tr>
+              <tr><td style="color:#8890a6;padding:6px 0">生年月日 &nbsp;Date of Birth</td><td>${admEsc(dob||"—")}</td></tr>
+              <tr><td style="color:#8890a6;padding:6px 0">試験地 &nbsp;Place of Test</td><td>${admEsc(place)}</td></tr>
+            </table>
+          </div>
+          <div style="width:112px;height:134px;border:2px solid #1F3864;border-radius:4px;overflow:hidden;background:#eef;flex-shrink:0">${photo}</div>
+        </div>
+        <div style="margin-top:18px;text-align:center;position:relative">
+          <p style="font-family:'Noto Serif JP',serif;line-height:2;font-size:.95rem;margin:0">あなたは ${a.name} における ${admEsc(level)} 日本語能力評価において合格しましたことをここに証します。</p>
+          <p style="line-height:1.85;font-size:.9rem;color:#333;margin:8px 0 0">This is to certify that <b>${admEsc(s.name||"")}</b> has successfully passed the <b>${admEsc(level)}</b> Japanese Language Proficiency assessment conducted by ${a.name}.</p>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:24px;position:relative">
+          <div style="font-size:.82rem"><div style="font-family:'Noto Serif JP',serif">${dateJP}</div><div style="color:#777">${todayStr}</div><div style="font-size:.6rem;color:#aaa;margin-top:4px">No: ${no}</div></div>
+          <div style="text-align:center">${_certSeal()}</div>
+          <div style="text-align:center"><div style="font-weight:700;color:#1F3864">${a.name}</div><div style="font-family:'Noto Serif JP',serif;font-size:.66rem;color:#888">日本語能力評価担当</div></div>
+        </div>
+      </div>
+    </div>`);
+    logActivity("Proficiency certificate: "+(s.name||"")); return;
+  }
+  const no=(type==="graduation"?"GRD-":"CMP-")+yr+"-"+String(Date.now()).slice(-4);
   if(type==="graduation"){
     _showDoc(_certFrame({ title:"GRADUATION DIPLOMA", lead:"This diploma is proudly conferred upon", name:admEsc(s.name),
       body:`who has successfully graduated from the <b>${admEsc(course)}</b> program${session?(" ("+admEsc(session)+")"):""} at ${a.name}${grade?(", achieving <b>"+admEsc(grade)+"</b>"):""}, and is hereby awarded this Diploma in recognition of dedication, discipline and academic excellence.`,
-      no:no, date:today, sid:admEsc(s.sid||"") }));
+      no:no, date:todayStr, sid:admEsc(s.sid||"") }));
     logActivity("Graduation diploma: "+(s.name||"")); return;
   }
   _showDoc(_certFrame({ title:"CERTIFICATE OF COMPLETION", lead:"This certificate is proudly presented to", name:admEsc(s.name),
     body:`for successfully completing the <b>${admEsc(course)}</b> course${session?(" ("+admEsc(session)+")"):""} at ${a.name}${grade?(" with result <b>"+admEsc(grade)+"</b>"):""}, demonstrating commendable effort and commitment throughout the program.`,
-    no:no, date:today, sid:admEsc(s.sid||"") }));
+    no:no, date:todayStr, sid:admEsc(s.sid||"") }));
   logActivity("Course certificate: "+(s.name||""));
 }
 function _visitorForm(){
@@ -4895,6 +4955,7 @@ function visitorPass(){
   logActivity("Visitor pass: "+name);
 }
 /* ===== END EMPLOYEES ===== */
+function togglePw(){ var i=document.getElementById('loginPass'); var t=document.getElementById('pwToggle'); if(!i)return; if(i.type==='password'){ i.type='text'; if(t)t.textContent='HIDE'; } else { i.type='password'; if(t)t.textContent='SHOW'; } }
 function partnerFinance(monthKey){
   let cM=0,cA=0;
   (db.students||[]).forEach(s=>(s.payments||[]).forEach(p=>{ const amt=Number(p.amount||0); cA+=amt; if((p.date||"").slice(0,7)===monthKey)cM+=amt; }));
