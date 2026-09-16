@@ -4772,47 +4772,99 @@ function empCert(id,type){
   const s=(db.staff||[]).find(x=>x.id===id); if(!s) return; const a=db.agency;
   const sal=Number(s.monthlySalary||0);
   const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const eid=empId(s,(db.staff||[]).indexOf(s));
+  const no=(type==="salary"?"SAL-":"EXP-")+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
   let title,body;
   if(type==="salary"){ title="SALARY CERTIFICATE";
-    body=`<p style="line-height:1.9;margin-top:16px">This is to certify that <b>${admEsc(s.name||"")}</b> ${s.role?("(<b>"+admEsc(s.role)+"</b>)"):""}, Employee ID <b>${admEsc(empId(s,(db.staff||[]).indexOf(s)))}</b>, is a permanent employee of <b>${a.name}</b>${s.joinDate?(" since <b>"+admEsc(s.joinDate)+"</b>"):""}.</p>
-    <p style="line-height:1.9">He/She draws a gross monthly salary of <b>${fmt(sal)}</b> (Taka ${sal.toLocaleString('en-IN')} only).</p>
-    <p style="line-height:1.9">This certificate is issued upon request for official purposes.</p>`;
+    body=`<p style="line-height:2;margin-top:10px;text-align:justify">This is to certify that <b>${admEsc(s.name||"")}</b>${s.role?(", <b>"+admEsc(s.role)+"</b>,"):","} bearing Employee ID <b>${admEsc(eid)}</b>, is a permanent employee of <b>${a.name}</b>${s.joinDate?(" since <b>"+admEsc(s.joinDate)+"</b>"):""}.</p>
+    <p style="line-height:2;text-align:justify">He/She draws a gross monthly salary of <b>${fmt(sal)}</b> (Taka ${sal.toLocaleString('en-IN')} only). This certificate is issued upon his/her request for official purposes.</p>`;
   } else { title="EXPERIENCE CERTIFICATE";
-    body=`<p style="line-height:1.9;margin-top:16px">This is to certify that <b>${admEsc(s.name||"")}</b> has been working with <b>${a.name}</b> as <b>${admEsc(s.role||"Staff")}</b>${s.joinDate?(" from <b>"+admEsc(s.joinDate)+"</b> to date"):""}.</p>
-    <p style="line-height:1.9">During this tenure, he/she has been found sincere, hardworking and professional in conduct. We wish him/her success in all future endeavours.</p>`;
+    body=`<p style="line-height:2;margin-top:10px;text-align:justify">This is to certify that <b>${admEsc(s.name||"")}</b> (Employee ID <b>${admEsc(eid)}</b>) has been serving <b>${a.name}</b> as <b>${admEsc(s.role||"Staff")}</b>${s.joinDate?(" from <b>"+admEsc(s.joinDate)+"</b> to date"):""}.</p>
+    <p style="line-height:2;text-align:justify">During this tenure he/she has been found sincere, punctual, hardworking and professional in conduct. We wish him/her every success in all future endeavours.</p>`;
   }
-  _showDoc(`<div style="min-height:60vh">${_docHead(title,admEsc(s.name||""))}${body}
-    <div style="margin-top:60px;display:flex;justify-content:space-between"><div style="text-align:center"><div style="border-top:1px solid #333;padding-top:6px;width:180px">Authorized Signature</div><div style="font-size:.8rem;color:#555;margin-top:4px">${a.name}</div></div>
-    <div style="text-align:center"><div style="border-top:1px solid #333;padding-top:6px;width:140px">Date: ${today}</div></div></div></div>`);
+  _showDoc(`<div style="position:relative;padding:40px 44px;background:#fff;border:1.5px solid #b8860b;border-radius:6px;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact;min-height:60vh">
+    <div style="position:absolute;inset:9px;border:1px solid #d9c07a;border-radius:4px;pointer-events:none"></div>
+    <img src="${LOGO_DATA}" style="position:absolute;top:54%;left:50%;transform:translate(-50%,-50%);width:340px;height:340px;object-fit:contain;opacity:.05;pointer-events:none">
+    <div style="position:relative">
+      <div style="display:flex;align-items:center;gap:14px;border-bottom:2px solid #1F3864;padding-bottom:12px">
+        <img src="${LOGO_DATA}" style="width:60px;height:60px;object-fit:contain">
+        <div><div style="font-family:Georgia,serif;font-size:1.4rem;font-weight:800;color:#1F3864">${a.name}</div>
+        <div style="font-size:.68rem;color:#777">${a.address||""}<br>${a.phone||""} &bull; ${a.email||""}</div></div>
+        <div style="margin-left:auto;text-align:right;font-size:.66rem;color:#888">Ref: ${no}<br>Date: ${today}</div>
+      </div>
+      <div style="text-align:center;margin:22px 0 6px"><span style="display:inline-block;background:linear-gradient(90deg,#1F3864,#4b2e83);color:#ffd77a;font-family:Georgia,serif;letter-spacing:4px;padding:7px 30px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact">${title}</span></div>
+      ${body}
+      <div style="margin-top:46px;display:flex;justify-content:space-between;align-items:flex-end">
+        <div style="text-align:center">${_certSeal()}<div style="font-size:.62rem;color:#8a6a12;letter-spacing:1px">OFFICIAL SEAL</div></div>
+        <div style="text-align:center"><div style="border-top:1.5px solid #333;padding-top:6px;width:180px;font-size:.82rem;font-weight:600">Authorized Signature</div><div style="font-size:.72rem;color:#555;margin-top:2px">${a.name}</div></div>
+      </div>
+    </div>
+  </div>`);
   logActivity("Certificate ("+type+"): "+(s.name||""));
+}
+function _certSeal(){
+  var sc=""; for(var i=0;i<18;i++){var ang=i/18*Math.PI*2; var x=50+Math.cos(ang)*30, y=46+Math.sin(ang)*30; sc+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5" fill="#d9b44a"/>';}
+  return '<svg width="80" height="94" viewBox="0 0 100 112" style="-webkit-print-color-adjust:exact;print-color-adjust:exact"><path d="M40 66 L32 110 L50 98 L68 110 L60 66 Z" fill="#a8791f"/>'+sc+'<circle cx="50" cy="46" r="30" fill="#e6c65f" stroke="#a8791f" stroke-width="2"/><circle cx="50" cy="46" r="23" fill="#fff7e0" stroke="#a8791f" stroke-width="1"/><text x="50" y="43" text-anchor="middle" font-size="11" font-weight="800" fill="#1F3864" font-family="Georgia,serif">GIA</text><text x="50" y="55" text-anchor="middle" font-size="5.2" letter-spacing="1" fill="#8a6a12">CERTIFIED</text></svg>';
+}
+function _certCorners(){
+  const c=(pos,tr)=>`<svg width="52" height="52" viewBox="0 0 52 52" style="position:absolute;${pos};${tr};opacity:.85"><path d="M4 4 H34 M4 4 V34" stroke="#b8860b" stroke-width="2" fill="none"/><path d="M4 4 H24 M4 4 V24" stroke="#4b2e83" stroke-width="1" fill="none" transform="translate(4,4)"/><circle cx="4" cy="4" r="3.5" fill="#b8860b"/></svg>`;
+  return c("top:8px;left:8px","")+c("top:8px;right:8px","transform:scaleX(-1)")+c("bottom:8px;left:8px","transform:scaleY(-1)")+c("bottom:8px;right:8px","transform:scale(-1,-1)");
+}
+function _certFrame(o){
+  const a=db.agency;
+  return `<div style="position:relative;padding:36px 40px;background:linear-gradient(180deg,#fffdf7,#fffefb);border:2px solid #b8860b;border-radius:8px;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:'Segoe UI',system-ui,sans-serif">
+    <div style="position:absolute;inset:11px;border:1px solid #4b2e83;border-radius:6px;pointer-events:none"></div>
+    <div style="position:absolute;inset:16px;border:1px solid #e0cb85;border-radius:4px;pointer-events:none"></div>
+    <img src="${LOGO_DATA}" style="position:absolute;top:52%;left:50%;transform:translate(-50%,-50%);width:340px;height:340px;object-fit:contain;opacity:.05;pointer-events:none">
+    ${_certCorners()}
+    <div style="position:relative;text-align:center">
+      <img src="${LOGO_DATA}" style="width:66px;height:66px;object-fit:contain">
+      <div style="font-family:Georgia,serif;font-size:1.5rem;font-weight:800;color:#1F3864;letter-spacing:1px;margin-top:2px">${a.name}</div>
+      <div style="font-size:.6rem;letter-spacing:2px;color:#8890a6">${a.address||""}</div>
+      <div style="display:inline-block;margin-top:20px;background:linear-gradient(90deg,#1F3864,#4b2e83);color:#ffd77a;font-family:Georgia,serif;font-size:1.05rem;letter-spacing:5px;padding:9px 40px;border-radius:4px;box-shadow:0 6px 16px rgba(31,56,100,.3);-webkit-print-color-adjust:exact;print-color-adjust:exact">${o.title}</div>
+      <p style="margin-top:22px;font-size:.9rem;color:#666;font-style:italic">${o.lead}</p>
+      <div style="font-family:Georgia,serif;font-size:2.3rem;font-weight:800;color:#4b2e83;margin:8px 0">${o.name}</div>
+      <div style="width:240px;height:2px;background:linear-gradient(90deg,transparent,#b8860b,transparent);margin:0 auto 16px"></div>
+      <p style="font-size:.92rem;line-height:1.9;max-width:580px;margin:0 auto;color:#333">${o.body}</p>
+      <div style="margin-top:30px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 10px">
+        <div style="text-align:center"><div style="border-top:1.5px solid #333;padding-top:5px;width:160px;font-size:.82rem;font-weight:600">Director</div></div>
+        <div style="text-align:center;margin-bottom:-6px">${_certSeal()}</div>
+        <div style="text-align:center"><div style="border-top:1.5px solid #333;padding-top:5px;width:160px;font-size:.82rem;font-weight:600">Principal</div></div>
+      </div>
+      <div style="margin-top:16px;font-size:.68rem;color:#8890a6;letter-spacing:.3px">Certificate No: ${o.no} &nbsp;•&nbsp; Date of Issue: ${o.date}${o.sid?(" &nbsp;•&nbsp; Student ID: "+o.sid):""}</div>
+    </div>
+  </div>`;
 }
 function _certPicker(){
   const opts=(db.students||[]).map(s=>`<option value="${s.id}">${admEsc(s.name)} (${admEsc(s.sid||"")})</option>`).join("");
-  return `<div class="formCard glassPanel"><h3 style="margin:0 0 10px">Course Completion Certificate</h3>
+  return `<div class="formCard glassPanel"><h3 style="margin:0 0 10px">Student Certificate</h3>
     <div class="grid3">
+      <div class="field"><label>Certificate Type</label><select id="cert_type"><option value="completion">Course Completion</option><option value="graduation">Graduation / Diploma</option></select></div>
       <div class="field"><label>Student</label><select id="cert_student"><option value="">— select —</option>${opts}</select></div>
       <div class="field"><label>Course / Program</label><input id="cert_course" placeholder="e.g. JLPT N5"></div>
-      <div class="field"><label>Result / Grade (optional)</label><input id="cert_grade" placeholder="e.g. Passed"></div>
+      <div class="field"><label>Result / Grade (optional)</label><input id="cert_grade" placeholder="e.g. Passed / A+"></div>
+      <div class="field"><label>Session / Year (optional)</label><input id="cert_session" placeholder="e.g. 2024–2025"></div>
     </div>
     <button class="btn" style="margin-top:12px" onclick="studentCert()">Generate Certificate</button></div>`;
 }
 function studentCert(){
   const id=document.getElementById("cert_student").value; const s=(db.students||[]).find(x=>x.id===id);
   if(!s){alert("Select a student");return;}
+  const typeEl=document.getElementById("cert_type"); const type=typeEl?typeEl.value:"completion";
   const a=db.agency; const course=document.getElementById("cert_course").value.trim()||s.course||"the program";
   const grade=document.getElementById("cert_grade").value.trim();
+  const sesEl=document.getElementById("cert_session"); const session=sesEl?sesEl.value.trim():"";
   const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  _showDoc(`<div style="padding:26px;border:3px double #4b2e83;border-radius:14px;text-align:center;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact">
-    <div style="position:absolute;inset:10px;border:1px solid #c9a227;border-radius:10px;pointer-events:none"></div>
-    <img src="${LOGO_DATA}" style="width:70px;height:70px;object-fit:contain;margin:6px auto"><h2 style="margin:2px 0;color:#1F3864;letter-spacing:1px">${a.name}</h2>
-    <div style="font-size:.7rem;letter-spacing:3px;color:#c9a227">CERTIFICATE OF COMPLETION</div>
-    <p style="margin-top:22px;font-size:.95rem;color:#555">This is proudly presented to</p>
-    <div style="font-size:2rem;font-weight:800;color:#4b2e83;margin:8px 0;font-family:Georgia,serif">${admEsc(s.name)}</div>
-    <p style="font-size:.95rem;line-height:1.8;max-width:520px;margin:8px auto">for successfully completing <b>${admEsc(course)}</b> at ${a.name}${grade?(" with result <b>"+admEsc(grade)+"</b>"):""}.</p>
-    <div style="margin-top:50px;display:flex;justify-content:space-around">
-      <div style="text-align:center"><div style="border-top:1px solid #333;padding-top:6px;width:170px">Director</div></div>
-      <div style="text-align:center"><div style="border-top:1px solid #333;padding-top:6px;width:170px">Date: ${today}</div></div>
-    </div></div>`);
+  const no=(type==="graduation"?"GRD-":"CMP-")+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
+  if(type==="graduation"){
+    _showDoc(_certFrame({ title:"GRADUATION DIPLOMA", lead:"This diploma is proudly conferred upon", name:admEsc(s.name),
+      body:`who has successfully graduated from the <b>${admEsc(course)}</b> program${session?(" ("+admEsc(session)+")"):""} at ${a.name}${grade?(", achieving <b>"+admEsc(grade)+"</b>"):""}, and is hereby awarded this Diploma in recognition of dedication, discipline and academic excellence.`,
+      no:no, date:today, sid:admEsc(s.sid||"") }));
+    logActivity("Graduation diploma: "+(s.name||"")); return;
+  }
+  _showDoc(_certFrame({ title:"CERTIFICATE OF COMPLETION", lead:"This certificate is proudly presented to", name:admEsc(s.name),
+    body:`for successfully completing the <b>${admEsc(course)}</b> course${session?(" ("+admEsc(session)+")"):""} at ${a.name}${grade?(" with result <b>"+admEsc(grade)+"</b>"):""}, demonstrating commendable effort and commitment throughout the program.`,
+    no:no, date:today, sid:admEsc(s.sid||"") }));
   logActivity("Course certificate: "+(s.name||""));
 }
 function _visitorForm(){
