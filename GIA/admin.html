@@ -496,7 +496,23 @@ body.dark-theme .panelTitle h2{color:#eaf0ff!important}
 @keyframes l2hue{to{filter:hue-rotate(360deg)}}
 .gl-glow{position:absolute;z-index:1;border-radius:50%;pointer-events:none;animation:glRise linear infinite}
 @keyframes glRise{from{transform:translateY(0)}to{transform:translateY(-110vh)}}
-</style><style id="giaPwToggle">#loginOverlay .l2-eye{font-size:10px;font-weight:800;letter-spacing:1px;color:#8fe3ff;cursor:pointer;user-select:none;padding:2px 6px;border:1px solid rgba(143,227,255,.4);border-radius:6px}#loginOverlay .l2-eye:hover{background:rgba(143,227,255,.15)}</style></head>
+</style><style id="giaPwToggle">#loginOverlay .l2-eye{font-size:10px;font-weight:800;letter-spacing:1px;color:#8fe3ff;cursor:pointer;user-select:none;padding:2px 6px;border:1px solid rgba(143,227,255,.4);border-radius:6px}#loginOverlay .l2-eye:hover{background:rgba(143,227,255,.15)}</style><style id="giaPrintFix">
+@media print{
+  html,body{background:#fff!important}
+  body::before,body::after{display:none!important}
+  header.topbar::after,.card::before{display:none!important}
+  /* stop clipping — let long receipts/reports flow to next page */
+  .receiptPaper,.reportPaper{overflow:visible!important;max-width:100%!important}
+  .tablewrap{overflow:visible!important;max-height:none!important}
+  #activityLogBox,#changeLogBox,#anaBody,.formCard,.section{overflow:visible!important;max-height:none!important}
+  /* neutralize glass + 3D tilt so nothing shifts/cuts */
+  .card,.formCard,.tablewrap{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;box-shadow:none!important}
+  .card{break-inside:avoid;page-break-inside:avoid}
+  tr,td,th{break-inside:avoid}
+  .printme .reportPaper table{width:100%!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style></head>
 <body>
 
 <div id="loadingScreen"><div class="spin"></div><div>Loading...</div></div>
