@@ -522,7 +522,7 @@ body.dark-theme .panelTitle h2{color:#eaf0ff!important}
     <form class="l2-box" onsubmit="return false">
       <div class="l2-logo loginLogo" id="loginLogoImg">GIA</div>
       <div class="l2-brand">GALAXY INTERNATIONAL ACADEMY</div>
-      <h2 class="l2-title">Admin Login</h2>
+      <h2 class="l2-title">Sign <span>In</span></h2>
       <div class="l2-inbox">
         <span class="l2-ic">👤</span>
         <input id="loginUser" placeholder=" " autocomplete="off">
@@ -709,7 +709,7 @@ body.dark-theme .panelTitle h2{color:#eaf0ff!important}
         <div class="panelTitle"><h2 id="h2-payments">Record a Payment</h2><span class="s">Select a student and add a payment — the receipt is generated automatically</span></div>
         <div class="formCard">
           <div class="grid3">
-            <div class="field"><label>Student</label><select id="pay_student" onchange="renderInstallments()"></select></div>
+            <div class="field"><label>Student</label><select id="pay_student" onchange="renderInstallments();try{renderFeeSetup();renderCourseFees();}catch(e){}"></select></div>
             <div class="field"><label>Amount (৳)</label><input type="number" id="pay_amount"></div>
             <div class="field"><label>Method</label><select id="pay_method"><option>Cash</option><option>Bkash</option><option>Nagad</option><option>Bank Transfer</option></select></div>
           </div>
@@ -728,6 +728,15 @@ body.dark-theme .panelTitle h2{color:#eaf0ff!important}
         </div>
         <div class="tablewrap">
           <table><thead><tr><th>Title</th><th>Amount</th><th>Due Date</th><th>Status</th><th class="no-print">Action</th></tr></thead><tbody id="installmentsBody"></tbody></table>
+        </div>
+
+        <div class="formCard" id="feeSetupCard" style="margin-top:8px">
+          <h3 style="margin-top:0">💳 Fee Setup — course fee · discount · adjustment</h3>
+          <div id="feeSetupBody"></div>
+        </div>
+        <div class="formCard admin-only" style="margin-top:14px">
+          <h3 style="margin-top:0">⚙️ Course Fees <span style="font-weight:400;color:var(--muted);font-size:.8rem">(base fee per course — used in Fee Setup)</span></h3>
+          <div id="courseFeesBody"></div>
         </div>
 
         <div class="panelTitle"><h2 id="h2-receipts">Recent Receipts</h2></div>
@@ -1113,6 +1122,13 @@ body.dark-theme .panelTitle h2{color:#eaf0ff!important}
         </div>
       </section>
 
+      <!-- INCOME -->
+      <section class="section" id="sec-income">
+        <div class="panelTitle"><h2>Income &amp; Refunds</h2><span class="s">Other income (with category) · refunds &amp; discounts</span></div>
+        <div class="no-print" id="incTabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+        <div id="incBody"></div>
+      </section>
+
       <!-- SETTINGS -->
       <section class="section" id="sec-settings">
         <div class="panelTitle"><h2 id="h2-settings">Settings</h2></div>
@@ -1422,7 +1438,7 @@ function startFirebaseSync(){
       const incoming = JSON.parse(docSnap.data().value);
       if(!incoming || !Array.isArray(incoming.students) || !Array.isArray(incoming.users)) return;
       db = incoming;
-      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
+      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{}; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
       const activeSection=document.querySelector(".section.active");
       if(activeSection){ const activeId=activeSection.id.replace("sec-",""); show(activeId); }
     }catch(e){ console.error("Sync parse failed", e); }
@@ -1450,7 +1466,7 @@ async function loadData(){
   try{
     const res = await storageAdapter.get(STORAGE_KEY, true);
     db = JSON.parse(res.value);
-    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
+    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{};
     db.students.forEach(s=>{s.documents=s.documents||{}; s.installments=s.installments||[];});
     let _mig=false;
     (db.users||[]).forEach(u=>{
@@ -1478,7 +1494,7 @@ async function loadData(){
         try{
           const res2 = await storageAdapter.get(STORAGE_KEY, true);
           db = JSON.parse(res2.value);
-          db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
+          db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{}; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[];
           (db.students||[]).forEach(s=>{s.documents=s.documents||{}; s.installments=s.installments||[];});
           recovered=true;
         }catch(e2){
@@ -1502,7 +1518,7 @@ function defaultData(){
   return {
     agency:{name:"Galaxy International Academy", address:"REVCON NURHEIGHTS, Plot #04, Block-L, Agrabad Access Road, Chattogram (Opposite City Hall)", phone:"+8801830150171", email:"giabd.official@gmail.com", website:"giabd.com"},
     users:[{id:"u1", username:"admin", password:"admin123", name:"MD SHARIF BHUYAN", role:"Cofounder"}],
-    students:[], leads:[], classes:[], expenses:[], attendance:[], activityLog:[], schools:[], tasks:[], calendarEvents:[], applications:[], admApps:[], commissions:[], communications:[], salaries:[], payables:[], staff:[], ssw:[], sswCompanies:[],
+    students:[], leads:[], classes:[], expenses:[], attendance:[], activityLog:[], schools:[], tasks:[], calendarEvents:[], applications:[], admApps:[], commissions:[], communications:[], salaries:[], payables:[], staff:[], ssw:[], sswCompanies:[], income:[], refunds:[], courseFees:{},
     nextNum:1
   };
 }
@@ -1642,6 +1658,7 @@ const NAV=[
   {id:"partners",en:"Investment & Profit",bn:"বিনিয়োগ ও লাভ",ja:"投資と利益"},
   {id:"communications",en:"Communication Log",bn:"যোগাযোগ",ja:"連絡記録"},
   {id:"reports",en:"Reports",bn:"রিপোর্ট",ja:"レポート"},
+  {id:"income",en:"Income",bn:"আয়",ja:"収入"},
   {id:"analytics",en:"Analytics",bn:"অ্যানালিটিক্স",ja:"分析"},
   {id:"employees",en:"Employees & Docs",bn:"কর্মী ও ডকুমেন্ট",ja:"社員"},
   {id:"settings",en:"Settings",bn:"সেটিংস",ja:"設定"}
@@ -1727,6 +1744,7 @@ function show(id){
   if(id==="deadlines")renderDeadlines();
   if(id==="reports")renderReports();
   if(id==="analytics")renderAnalytics();
+  if(id==="income")renderIncome();
   if(id==="employees")renderEmployees();
   if(id==="calendar")renderCalendar();
   if(id==="admform")renderAdmForm();
@@ -2457,6 +2475,26 @@ async function deleteSchool(id){
 }
 
 /* ---------------- PAYMENTS ---------------- */
+async function editPayment(studentId,paymentId){
+  if(!requireAdmin())return;
+  const s=db.students.find(x=>x.id===studentId); if(!s)return;
+  const p=(s.payments||[]).find(x=>x.id===paymentId); if(!p)return;
+  const amt=prompt("Edit amount:", p.amount); if(amt===null)return;
+  const date=prompt("Edit date (YYYY-MM-DD):", p.date); if(date===null)return;
+  const method=prompt("Edit method (Cash/bKash/Bank...):", p.method||""); if(method===null)return;
+  p.amount=Number(amt)||0; if(date)p.date=date; p.method=method||p.method;
+  logActivity("Edited payment — "+s.name+" ("+fmt(p.amount)+")");
+  await saveData(); renderPayments();
+}
+async function deletePayment(studentId,paymentId){
+  if(!requireAdmin())return;
+  const s=db.students.find(x=>x.id===studentId); if(!s)return;
+  const p=(s.payments||[]).find(x=>x.id===paymentId); if(!p)return;
+  if(!confirm("Delete this payment of "+fmt(p.amount)+" on "+p.date+"?\nThis cannot be undone."))return;
+  s.payments=(s.payments||[]).filter(x=>x.id!==paymentId);
+  logActivity("Deleted payment — "+s.name+" ("+fmt(p.amount)+")");
+  await saveData(); renderPayments();
+}
 function renderPayments(){
   const sel=document.getElementById("pay_student");
   sel.innerHTML=db.students.map(s=>`<option value="${s.id}">${s.sid} — ${s.name} (Due: ${fmt(studentDue(s), s.currency)})</option>`).join("");
@@ -2465,9 +2503,10 @@ function renderPayments(){
   rows.sort((a,b)=>new Date(b.date)-new Date(a.date));
   document.getElementById("receiptsBody").innerHTML = rows.slice(0,15).map(p=>`
     <tr><td>${p.date}</td><td>${p.studentName} (${p.sid})</td><td>${fmt(p.amount)}</td><td>${p.method}</td>
-    <td class="no-print"><button class="btn ghost small" onclick="showReceipt('${p.studentId}','${p.id}')">View Receipt</button></td></tr>
+    <td class="no-print"><button class="btn ghost small" onclick="showReceipt('${p.studentId}','${p.id}')">Receipt</button>${(session&&session.role==="Cofounder")?` <button class="btn small ghost" onclick="editPayment('${p.studentId}','${p.id}')">Edit</button> <button class="btn small danger" onclick="deletePayment('${p.studentId}','${p.id}')">Del</button>`:""}</td></tr>
   `).join("") || `<tr><td colspan="5">No payments yet</td></tr>`;
   renderInstallments();
+  try{renderFeeSetup();renderCourseFees();}catch(e){}
 }
 function renderInstallments(){
   const sid=document.getElementById("pay_student").value;
@@ -2923,12 +2962,11 @@ function renderExpenses(){
     <td class="no-print"><button class="btn ghost small" onclick="show('salary')">Open Payroll</button></td></tr>`:`
     <tr><td>${e.date}</td><td>${e.cat}</td><td>${fmt(e.amount)}</td><td>${e.note||"—"}</td>
     <td class="no-print">
-      <button class="btn ghost small" onclick="openExpenseForEdit('${e.id}')">Edit</button>
-      ${e.receiptKey?`<button class="btn small gold" onclick="viewExpenseReceipt('${e.receiptKey}')">Receipt</button>`:""}
-      <button class="btn small danger" onclick="deleteExpense('${e.id}')">Del</button>
+      ${(session&&session.role==="Cofounder")?`<button class="btn ghost small" onclick="openExpenseForEdit('${e.id}')">Edit</button> `:""}${e.receiptKey?`<button class="btn small gold" onclick="viewExpenseReceipt('${e.receiptKey}')">Receipt</button>`:""}${(session&&session.role==="Cofounder")?` <button class="btn small danger" onclick="deleteExpense('${e.id}')">Del</button>`:""}
     </td></tr>`).join("")||`<tr><td colspan="5">No expenses recorded${filterMonth!=="ALL"?" for this month":" yet"}</td></tr>`;
 }
 function openExpenseForEdit(id){
+  if(!requireAdmin())return;
   const e=db.expenses.find(x=>x.id===id);
   if(!e)return;
   document.getElementById("ex_editing_id").value=id;
@@ -3012,6 +3050,7 @@ async function saveExpense(){
   renderExpenses();
 }
 async function deleteExpense(id){
+  if(!requireAdmin())return;
   if(!confirm("Delete this expense?"))return;
   db.expenses=db.expenses.filter(x=>x.id!==id);
   await saveData(); renderExpenses();
@@ -3633,7 +3672,7 @@ function importBackup(evt){
       const parsed=JSON.parse(e.target.result);
       if(!parsed.students || !parsed.users){alert("File is not in the correct format");return;}
       db=parsed;
-      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
+      db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{};
       await saveData();
       alert("Data restored successfully");
       show("dashboard");
@@ -3759,7 +3798,7 @@ async function uploadAdmPhoto(inputEl){
 async function saveAdmApp(alsoPrint){
   const name=admG("ad_name").trim();
   if(!name){alert("Full Name is required");return;}
-  db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
+  db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{};
   const edu={};
   ["ssc","hsc","bachelor","others"].forEach(k=>{ edu[k]={inst:admG("ad_edu_"+k+"_inst").trim(),board:admG("ad_edu_"+k+"_board").trim(),year:admG("ad_edu_"+k+"_year").trim(),result:admG("ad_edu_"+k+"_result").trim()}; });
   const programs=ADM_PROGRAMS.filter((p,i)=>admChk("ad_prog_"+i));
@@ -4972,6 +5011,182 @@ function visitorPass(){
 }
 /* ===== END EMPLOYEES ===== */
 function togglePw(){ var i=document.getElementById('loginPass'); var t=document.getElementById('pwToggle'); if(!i)return; if(i.type==='password'){ i.type='text'; if(t)t.textContent='HIDE'; } else { i.type='password'; if(t)t.textContent='SHOW'; } }
+/* ===== INCOME LEDGER + REFUND/DISCOUNT ===== */
+const INCOME_CATS=["Registration","Consultancy","Book / Materials","Visa Processing","Service Charge","SSW Service","Exam Fee","Other Income","Donation"];
+function _incAdmin(){ return !!session && session.role==="Cofounder"; }
+function _incThisMonth(){ return new Date().toISOString().slice(0,7); }
+function renderIncome(tab){
+  tab=tab||window._incTab||"inc"; window._incTab=tab;
+  const bar=document.getElementById("incTabs");
+  const tabs=[["inc","💵 Income Ledger"],["ref","↩️ Refund / Discount"]];
+  if(bar) bar.innerHTML=tabs.map(t=>`<button class="btn small ${t[0]===tab?'':'ghost'}" onclick="renderIncome('${t[0]}')">${t[1]}</button>`).join("");
+  const box=document.getElementById("incBody"); if(!box) return;
+  box.innerHTML = tab==="inc" ? _incLedger() : _refLedger();
+  try{animateCounters(box);}catch(e){}
+}
+function _incLedger(){
+  db.income=db.income||[];
+  const catOpts=INCOME_CATS.map(c=>`<option>${admEsc(c)}</option>`).join("");
+  const stuOpts='<option value="">— none —</option>'+(db.students||[]).map(s=>`<option value="${s.id}">${admEsc(s.name)} (${admEsc(s.sid||"")})</option>`).join("");
+  const list=db.income.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const mk=_incThisMonth();
+  const total=list.reduce((a,x)=>a+Number(x.amount||0),0);
+  const tm=list.filter(x=>(x.date||"").slice(0,7)===mk).reduce((a,x)=>a+Number(x.amount||0),0);
+  const byCat={}; list.forEach(x=>{const c=x.category||"Other";byCat[c]=(byCat[c]||0)+Number(x.amount||0);});
+  const catItems=Object.keys(byCat).map(k=>({label:k,value:byCat[k]})).sort((a,b)=>b.value-a.value);
+  const editing=window._incEdit;
+  const cur=editing?db.income.find(x=>x.id===editing):null;
+  const g=(v)=>v!=null?v:"";
+  const rows=list.map(x=>{ const s=(db.students||[]).find(z=>z.id===x.studentId);
+    return `<tr><td>${admEsc(x.date||"")}</td><td><span class="badge">${admEsc(x.category||"—")}</span></td><td style="text-align:right">${fmt(x.amount)}</td><td>${admEsc(x.note||"")}${s?(" · "+admEsc(s.name)):""}</td>
+    <td class="no-print" style="white-space:nowrap">${_incAdmin()?`<button class="btn small ghost" onclick="incEdit('${x.id}')">Edit</button> <button class="btn small danger" onclick="incDelete('${x.id}')">Del</button>`:""}</td></tr>`;
+  }).join("")||`<tr><td colspan="5" style="text-align:center;color:var(--muted)">No income entries yet</td></tr>`;
+  return `<div class="cards" style="grid-template-columns:repeat(3,1fr)">
+      <div class="card accent"><h3>Total Income (ledger)</h3><div class="num">${fmt(total)}</div></div>
+      <div class="card"><h3>This Month</h3><div class="num">${fmt(tm)}</div></div>
+      <div class="card gold"><h3>Entries</h3><div class="num">${list.length}</div></div>
+    </div>
+    <div class="formCard glassPanel" style="margin-top:12px">
+      <h3 style="margin:0 0 4px">${editing?"Edit Income":"Add Income"}</h3>
+      <div class="note" style="color:var(--muted);margin-bottom:10px">⚠️ Student course-fee ar SSW payment already alada track hoy — sei gula ekhane abar dile double count hobe. Ekhane onno income (registration, consultancy, book, donation ityadi) din.</div>
+      <div class="grid3">
+        <div class="field"><label>Date</label><input type="date" id="inc_date" value="${g(cur?cur.date:new Date().toISOString().slice(0,10))}"></div>
+        <div class="field"><label>Category / Source</label><select id="inc_cat">${catOpts}</select></div>
+        <div class="field"><label>Amount (৳)</label><input type="number" id="inc_amount" value="${g(cur?cur.amount:"")}"></div>
+        <div class="field"><label>Student (optional)</label><select id="inc_student">${stuOpts}</select></div>
+        <div class="field" style="grid-column:span 2"><label>Note</label><input id="inc_note" value="${admEsc(g(cur?cur.note:""))}"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px"><button class="btn" onclick="addIncome()">${editing?"Save Changes":"＋ Add Income"}</button>${editing?`<button class="btn ghost" onclick="incCancel()">Cancel</button>`:""}</div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="formCard glassPanel"><div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th><th class="no-print"></th></tr></thead><tbody>${rows}</tbody></table></div></div>
+      <div class="formCard glassPanel"><h3 style="margin:0 0 10px">Income by Category</h3>${niceHBar(catItems)}</div>
+    </div>`;
+}
+async function addIncome(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:"";};
+  const amount=Number(g("inc_amount"))||0; if(!amount){alert("Enter amount");return;}
+  const rec={ date:g("inc_date")||new Date().toISOString().slice(0,10), category:g("inc_cat"), amount, note:g("inc_note").trim(), studentId:g("inc_student")||"" };
+  db.income=db.income||[];
+  if(window._incEdit){ const x=db.income.find(z=>z.id===window._incEdit); if(x)Object.assign(x,rec); logActivity("Edited income: "+fmt(amount)); window._incEdit=null; }
+  else { db.income.push(Object.assign({id:"inc"+Date.now()},rec)); logActivity("Added income ("+rec.category+"): "+fmt(amount)); }
+  await saveData(); renderIncome("inc");
+}
+function incEdit(id){ if(!_incAdmin())return; window._incEdit=id; renderIncome("inc"); setTimeout(()=>{const x=db.income.find(z=>z.id===id); if(x){const c=document.getElementById("inc_cat"); if(c)c.value=x.category||INCOME_CATS[0]; const s=document.getElementById("inc_student"); if(s)s.value=x.studentId||"";}},20); }
+function incCancel(){ window._incEdit=null; renderIncome("inc"); }
+async function incDelete(id){ if(!requireAdmin())return; const x=(db.income||[]).find(z=>z.id===id); if(!x)return; if(!confirm("Delete this income of "+fmt(x.amount)+"?"))return; db.income=(db.income||[]).filter(z=>z.id!==id); logActivity("Deleted income: "+fmt(x.amount)); await saveData(); renderIncome("inc"); }
+
+function _refLedger(){
+  db.refunds=db.refunds||[];
+  const stuOpts='<option value="">— none —</option>'+(db.students||[]).map(s=>`<option value="${s.id}">${admEsc(s.name)} (${admEsc(s.sid||"")})</option>`).join("");
+  const list=db.refunds.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const totRef=list.filter(x=>x.type==="Refund").reduce((a,x)=>a+Number(x.amount||0),0);
+  const totDis=list.filter(x=>x.type==="Discount").reduce((a,x)=>a+Number(x.amount||0),0);
+  const rows=list.map(x=>`<tr><td>${admEsc(x.date||"")}</td><td><span class="badge ${x.type==="Refund"?"bad":"warn"}">${admEsc(x.type||"")}</span></td><td>${admEsc(x.studentName||"—")}</td><td style="text-align:right">${fmt(x.amount)}</td><td>${admEsc(x.reason||"")}</td>
+    <td class="no-print">${_incAdmin()?`<button class="btn small danger" onclick="refDelete('${x.id}')">Del</button>`:""}</td></tr>`).join("")||`<tr><td colspan="6" style="text-align:center;color:var(--muted)">No refunds / discounts yet</td></tr>`;
+  return `<div class="cards" style="grid-template-columns:repeat(2,1fr)">
+      <div class="card"><h3>Total Refunds (cash out)</h3><div class="num" style="color:#c0392b">${fmt(totRef)}</div></div>
+      <div class="card"><h3>Total Discounts given</h3><div class="num">${fmt(totDis)}</div></div>
+    </div>
+    <div class="formCard glassPanel" style="margin-top:12px">
+      <h3 style="margin:0 0 4px">Record Refund / Discount</h3>
+      <div class="note" style="color:var(--muted);margin-bottom:10px">Refund = cash ferot (profit theke bad jay)। Discount = record (student-er due komাতে Students-e total fee adjust korুন)।</div>
+      <div class="grid3">
+        <div class="field"><label>Date</label><input type="date" id="ref_date" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="field"><label>Type</label><select id="ref_type"><option>Refund</option><option>Discount</option></select></div>
+        <div class="field"><label>Student</label><select id="ref_student">${stuOpts}</select></div>
+        <div class="field"><label>Amount (৳)</label><input type="number" id="ref_amount"></div>
+        <div class="field" style="grid-column:span 2"><label>Reason</label><input id="ref_reason"></div>
+      </div>
+      <button class="btn" style="margin-top:10px" onclick="addRefund()">＋ Add Record</button>
+    </div>
+    <div class="formCard glassPanel" style="margin-top:12px"><div class="tablewrap"><table><thead><tr><th>Date</th><th>Type</th><th>Student</th><th>Amount</th><th>Reason</th><th class="no-print"></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+async function addRefund(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:"";};
+  const amount=Number(g("ref_amount"))||0; if(!amount){alert("Enter amount");return;}
+  const sid=g("ref_student"); const s=(db.students||[]).find(x=>x.id===sid);
+  db.refunds=db.refunds||[];
+  db.refunds.push({ id:"rf"+Date.now(), date:g("ref_date")||new Date().toISOString().slice(0,10), type:g("ref_type"), studentId:sid, studentName:s?s.name:"", amount, reason:g("ref_reason").trim() });
+  logActivity(g("ref_type")+" recorded: "+fmt(amount)+(s?(" — "+s.name):""));
+  await saveData(); renderIncome("ref");
+}
+async function refDelete(id){ if(!requireAdmin())return; const x=(db.refunds||[]).find(z=>z.id===id); if(!x)return; if(!confirm("Delete this "+(x.type||"record")+"?"))return; db.refunds=(db.refunds||[]).filter(z=>z.id!==id); logActivity("Deleted "+(x.type||"record")+": "+fmt(x.amount)); await saveData(); renderIncome("ref"); }
+/* ===== END INCOME ===== */
+/* ===== COURSE FEE + DISCOUNT + ADJUSTMENT + AUTO PLAN ===== */
+function _feeAdmin(){ return !!session && session.role==="Cofounder"; }
+function getCourseFee(course){ db.courseFees=db.courseFees||{}; return Number(db.courseFees[course]||0); }
+function _feeSeed(){ db.courseFees=db.courseFees||{}; if(Object.keys(db.courseFees).length===0){ ["JLPT N5","JLPT N4","JLPT N3","JLPT N2","JFT-Basic","Kaiwa","NAT-TEST"].forEach(c=>{ if(db.courseFees[c]==null) db.courseFees[c]=0; }); } }
+function renderFeeSetup(){
+  const box=document.getElementById("feeSetupBody"); if(!box) return;
+  const sid=(document.getElementById("pay_student")||{}).value; const s=(db.students||[]).find(x=>x.id===sid);
+  if(!s){ box.innerHTML=`<div style="color:var(--muted)">Select a student above.</div>`; return; }
+  _feeSeed();
+  const base=getCourseFee(s.course)|| (Number(s.baseFee)||0) || 0;
+  const disc=Number(s.discount||0), adj=Number(s.feeAdjustment||0);
+  box.innerHTML=`
+    <div class="grid3">
+      <div class="field"><label>Course</label><input value="${admEsc(s.course||"—")}" disabled></div>
+      <div class="field"><label>Base Course Fee (৳)</label><input type="number" id="fs_base" value="${base}"></div>
+      <div class="field"><label>Discount (৳)</label><input type="number" id="fs_disc" value="${disc}" oninput="calcNet()"></div>
+      <div class="field"><label>Adjustment ± (৳) <span style="color:var(--muted);font-size:.75rem">(minus = deo −value)</span></label><input type="number" id="fs_adj" value="${adj}" oninput="calcNet()"></div>
+      <div class="field"><label>Net Payable</label><input id="fs_net" disabled style="font-weight:800;color:#1F3864"></div>
+      <div class="field"><label>&nbsp;</label><button class="btn" onclick="applyFee('${s.id}')">✔ Set as Total Fee</button></div>
+    </div>
+    <div class="note" style="color:var(--muted);margin-top:6px">Net = Base − Discount + Adjustment. Adjustment negative dile (jemn −500) aro kombe.</div>
+    <div class="grid3" style="margin-top:10px">
+      <div class="field"><label>Auto plan — number of installments</label><input type="number" id="fs_n" value="3" min="1"></div>
+      <div class="field"><label>First due date</label><input type="date" id="fs_start" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="field"><label>&nbsp;</label><button class="btn ghost" onclick="genPlan('${s.id}')">⚡ Generate Equal Installments</button></div>
+    </div>`;
+  document.getElementById("fs_base").addEventListener("input",calcNet); calcNet();
+}
+function calcNet(){
+  const b=Number((document.getElementById("fs_base")||{}).value||0);
+  const d=Number((document.getElementById("fs_disc")||{}).value||0);
+  const a=Number((document.getElementById("fs_adj")||{}).value||0);
+  const net=Math.max(0,b-d+a); const el=document.getElementById("fs_net"); if(el)el.value=fmt(net);
+  return net;
+}
+async function applyFee(sid){
+  const s=(db.students||[]).find(x=>x.id===sid); if(!s) return;
+  const base=Number((document.getElementById("fs_base")||{}).value||0);
+  const disc=Number((document.getElementById("fs_disc")||{}).value||0);
+  const adj=Number((document.getElementById("fs_adj")||{}).value||0);
+  const net=Math.max(0,base-disc+adj);
+  s.baseFee=base; s.discount=disc; s.feeAdjustment=adj; s.totalFee=net;
+  logActivity("Fee set for "+s.name+": base "+fmt(base)+", disc "+fmt(disc)+", adj "+fmt(adj)+" = "+fmt(net));
+  await saveData(); renderPayments();
+}
+async function genPlan(sid){
+  const s=(db.students||[]).find(x=>x.id===sid); if(!s) return;
+  const net=calcNet()|| Number(s.totalFee||0);
+  const n=Math.max(1,Math.floor(Number((document.getElementById("fs_n")||{}).value||1)));
+  const start=(document.getElementById("fs_start")||{}).value||new Date().toISOString().slice(0,10);
+  if(!net){alert("Set a fee first");return;}
+  if((s.installments||[]).length && !confirm("Ei student-er "+(s.installments.length)+" ta installment already ache. Notun "+n+" ta jog korbo?")) return;
+  s.installments=s.installments||[];
+  const each=Math.round(net/n); let sumSoFar=0;
+  for(let i=0;i<n;i++){ const amt=(i===n-1)?(net-sumSoFar):each; sumSoFar+=amt;
+    const d=new Date(start); d.setMonth(d.getMonth()+i);
+    s.installments.push({id:"i"+Date.now()+i, title:(i+1)+ordinal(i+1)+" Installment", amount:amt, dueDate:d.toISOString().slice(0,10), status:"Pending"});
+  }
+  logActivity("Auto installment plan ("+n+") for "+s.name+" = "+fmt(net));
+  await saveData(); renderInstallments();
+}
+function ordinal(n){ const s=["th","st","nd","rd"],v=n%100; return (s[(v-20)%10]||s[v]||s[0]); }
+function renderCourseFees(){
+  const box=document.getElementById("courseFeesBody"); if(!box) return;
+  _feeSeed();
+  if(!_feeAdmin()){ box.innerHTML=`<div style="color:var(--muted)">Only admin can edit course fees.</div>`; return; }
+  const rows=Object.keys(db.courseFees).sort().map(c=>`<tr><td>${admEsc(c)}</td><td style="text-align:right"><input type="number" value="${Number(db.courseFees[c]||0)}" onchange="setCourseFee('${admEsc(c).replace(/'/g,"")}',this.value)" style="width:120px;text-align:right"></td><td class="no-print"><button class="btn small danger" onclick="delCourseFee('${admEsc(c).replace(/'/g,"")}')">✕</button></td></tr>`).join("");
+  box.innerHTML=`<div class="tablewrap"><table><thead><tr><th>Course</th><th style="text-align:right">Base Fee (৳)</th><th class="no-print"></th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="cf_name" placeholder="New course name" style="min-width:180px"><input id="cf_fee" type="number" placeholder="Fee" style="width:120px"><button class="btn ghost small" onclick="addCourseFee()">＋ Add Course</button></div>`;
+}
+async function setCourseFee(course,val){ if(!requireAdmin())return; db.courseFees=db.courseFees||{}; db.courseFees[course]=Number(val)||0; await saveData(); }
+async function addCourseFee(){ if(!requireAdmin())return; const n=(document.getElementById("cf_name")||{}).value.trim(); if(!n){alert("Enter course name");return;} db.courseFees=db.courseFees||{}; db.courseFees[n]=Number((document.getElementById("cf_fee")||{}).value||0); await saveData(); renderCourseFees(); }
+async function delCourseFee(course){ if(!requireAdmin())return; if(!confirm("Remove "+course+"?"))return; delete db.courseFees[course]; await saveData(); renderCourseFees(); }
+/* ===== END FEE ===== */
 function partnerFinance(monthKey){
   let cM=0,cA=0;
   (db.students||[]).forEach(s=>(s.payments||[]).forEach(p=>{ const amt=Number(p.amount||0); cA+=amt; if((p.date||"").slice(0,7)===monthKey)cM+=amt; }));
@@ -4984,9 +5199,11 @@ function partnerFinance(monthKey){
   (db.ssw||[]).forEach(c=>(c.payments||[]).forEach(p=>{ const amt=Number(p.amount||0); sswA+=amt; if((p.date||"").slice(0,7)===monthKey)sswM+=amt; }));
   let sswCM=0,sswCA=0;
   (db.ssw||[]).forEach(c=>(c.costs||[]).forEach(x=>{ const amt=Number(x.amount||0); sswCA+=amt; if((x.date||"").slice(0,7)===monthKey)sswCM+=amt; }));
-  eM+=sswCM; eA+=sswCA;
-  const incM=cM+oM+sswM, incA=cA+oA+sswA;
-  return {cM,cA,oM,oA,sswM,sswA,sswCM,sswCA,incM,incA,eM,eA,netM:incM-eM,netA:incA-eA};
+  let inLM=0,inLA=0; (db.income||[]).forEach(x=>{const amt=Number(x.amount||0); inLA+=amt; if((x.date||"").slice(0,7)===monthKey)inLM+=amt;});
+  let rfM=0,rfA=0; (db.refunds||[]).forEach(x=>{ if((x.type||"Refund")!=="Refund")return; const amt=Number(x.amount||0); rfA+=amt; if((x.date||"").slice(0,7)===monthKey)rfM+=amt;});
+  eM+=sswCM+rfM; eA+=sswCA+rfA;
+  const incM=cM+oM+sswM+inLM, incA=cA+oA+sswA+inLA;
+  return {cM,cA,oM,oA,sswM,sswA,sswCM,sswCA,inLM,inLA,rfM,rfA,incM,incA,eM,eA,netM:incM-eM,netA:incA-eA};
 }
 function renderPartnerCalc(){
   const box=document.getElementById("pt_calc"); if(!box) return;
@@ -5260,7 +5477,7 @@ async function restoreAutoSnap(key, date){
     const parsed=JSON.parse(res.value);
     if(!parsed || !parsed.students || !parsed.users){alert("That backup is empty or invalid");return;}
     db=parsed;
-    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.autoSnapIndex=db.autoSnapIndex||[];
+    db.leads=db.leads||[]; db.classes=db.classes||[]; db.expenses=db.expenses||[]; db.attendance=db.attendance||[]; db.activityLog=db.activityLog||[]; db.calendarEvents=db.calendarEvents||[]; db.applications=db.applications||[]; db.admApps=db.admApps||[]; db.salaries=db.salaries||[]; db.payables=db.payables||[]; db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{}; db.commissions=db.commissions||[]; db.communications=db.communications||[]; db.schools=db.schools||[]; db.tasks=db.tasks||[]; db.autoSnapIndex=db.autoSnapIndex||[];
     logActivity("Restored from automatic backup: "+date);
     await saveData();
     alert("Data restored from "+date);
@@ -5760,7 +5977,7 @@ let _stEditId=null;
 function renderSalary(){
   const mEl=document.getElementById("pr_month"); if(mEl && !mEl.value) mEl.value=new Date().toISOString().slice(0,7);
   const month=mEl?mEl.value:"";
-  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.salaries=db.salaries||[];
+  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{}; db.salaries=db.salaries||[];
   const sb=document.getElementById("staffListBody");
   if(sb){ sb.innerHTML=`<div style="overflow:auto"><table style="width:100%"><tr><th style="text-align:left;padding:5px">Name</th><th style="text-align:left;padding:5px">Role</th><th style="text-align:right;padding:5px">Monthly</th><th style="padding:5px">Status</th><th class="no-print"></th></tr>${db.staff.length?db.staff.map(st=>`<tr><td style="padding:5px"><a href="#" onclick="showStaffHistory('${st.id}');return false" style="color:var(--navy);font-weight:600;text-decoration:underline;cursor:pointer">${admEsc(st.name)}</a></td><td style="padding:5px">${admEsc(st.role||"")}</td><td style="padding:5px;text-align:right">${fmt(st.monthlySalary)}</td><td style="padding:5px;text-align:center"><span class="badge" style="background:${st.active!==false?'var(--good)':'#999'};color:#fff">${st.active!==false?'Active':'Inactive'}</span></td><td class="no-print" style="padding:5px"><button class="btn small" onclick="editStaff('${st.id}')">Edit</button> <button class="btn small ghost" onclick="toggleStaffActive('${st.id}')">${st.active!==false?'Off':'On'}</button> ${canDelete()?`<button class="btn small danger" onclick="deleteStaff('${st.id}')">Del</button>`:''}</td></tr>`).join(""):`<tr><td colspan="5" style="padding:5px">No staff yet — add below</td></tr>`}</table></div>`; }
   const recs=db.salaries.filter(x=>x.month===month);
@@ -5772,7 +5989,7 @@ function renderSalary(){
 }
 function generatePayroll(){
   const month=document.getElementById("pr_month").value; if(!month){alert("Select a month");return;}
-  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.salaries=db.salaries||[];
+  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{}; db.salaries=db.salaries||[];
   const active=db.staff.filter(s=>s.active!==false);
   if(!active.length){alert("No active staff. Age Staff Setup-e staff add korun.");return;}
   let added=0;
@@ -5803,7 +6020,7 @@ function addStaff(){
   const g=id=>document.getElementById(id).value;
   const name=g("st_name").trim(); if(!name){alert("Enter staff name");return;}
   const sal=Number(g("st_salary"))||0;
-  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[];
+  db.staff=db.staff||[]; db.ssw=db.ssw||[]; db.sswCompanies=db.sswCompanies||[]; db.income=db.income||[]; db.refunds=db.refunds||[]; db.courseFees=db.courseFees||{};
   if(_stEditId){ const s=db.staff.find(x=>x.id===_stEditId); if(s){ Object.assign(s,{name,role:g("st_role").trim(),monthlySalary:sal,phone:g("st_phone").trim(),joinDate:g("st_join")}); } _stEditId=null; const en=document.getElementById("st_edit_note"); if(en)en.textContent=""; }
   else { db.staff.push({id:"stf"+Date.now(),name,role:g("st_role").trim(),monthlySalary:sal,phone:g("st_phone").trim(),joinDate:g("st_join"),active:true}); }
   logActivity("Staff saved: "+name); saveData();
