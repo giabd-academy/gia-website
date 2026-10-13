@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GIA Student — Galaxy International Academy</title>
+<meta name="description" content="GIA Student app: fees, installments, attendance, tests and notices for Galaxy International Academy students.">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c0392b">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GIA Student">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="app.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div id="app">
+  <section id="login" class="login">
+    <div class="lcard">
+      <img src="../logomark.png" alt="GIA" class="llogo" onerror="this.src='icon-192.png'">
+      <h1>GIA Student</h1>
+      <p class="sub" data-t="loginSub">Galaxy International Academy</p>
+      <label data-t="sid">Student ID</label>
+      <input id="in_sid" placeholder="GIA-00001" autocomplete="username" autocapitalize="characters">
+      <label data-t="phone">Phone number (given at admission)</label>
+      <input id="in_phone" type="tel" placeholder="01XXXXXXXXX" autocomplete="tel">
+      <button id="btnLogin" class="btn" data-t="login">Log in</button>
+      <div id="lerr" class="err"></div>
+      <p class="hint" data-t="loginHint">Only you can see your own information. Problem? Call the office.</p>
+      <button class="lang" onclick="GIA.toggleLang()">EN / বাংলা</button>
+    </div>
+  </section>
+  <section id="main" class="main" hidden>
+    <header class="top">
+      <img src="../logomark.png" alt="" onerror="this.src='icon-192.png'">
+      <div class="tt"><b id="hName">—</b><span id="hSub"></span></div>
+      <button class="ib" onclick="GIA.toggleLang()" title="Language">অ/A</button>
+      <button class="ib" onclick="GIA.refresh()" title="Refresh">⟳</button>
+    </header>
+    <div id="offline" class="offline" hidden data-t="offline">Offline — showing last saved data</div>
+    <main id="view"></main>
+    <nav class="tabs" id="tabs"></nav>
+  </section>
+</div>
+<button id="installBtn" class="install" hidden onclick="GIA.install()">📲 <span data-t="install">Install app</span></button>
+<script src="app.js"></script>
+</body>
+</html>
