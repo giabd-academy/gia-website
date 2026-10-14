@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /office/
+Sitemap: https://giabd.com/sitemap.xml
