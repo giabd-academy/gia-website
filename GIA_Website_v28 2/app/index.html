@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GIA App — Galaxy International Academy</title>
+<meta name="description" content="GIA App for students and teachers of Galaxy International Academy.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f2544">
+<link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GIA App">
+<script>
+(function(){try{var q=location.search;if(/[?&]id=/.test(q)){location.replace("student.html"+q);return;}
+ if(!/choose=1/.test(q)){var r=localStorage.getItem("gia_app_role");if(r==="student"||r==="teacher")location.replace(r+".html");}}catch(e){}})();
+</script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Bengali",Roboto,sans-serif;color:#fff;background:linear-gradient(135deg,#0f2544,#1f3c6b 45%,#7b1d14);background-size:300% 300%;animation:g 16s ease infinite;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;overflow:hidden;position:relative}
+@keyframes g{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+.sun{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(192,57,43,.55),transparent 65%);top:-140px;right:-140px}
+.petal{position:absolute;top:-20px;width:12px;height:12px;background:#ffc6d3;border-radius:12px 0;opacity:.75;animation:f 10s linear infinite}
+@keyframes f{to{transform:translateY(110vh) translateX(90px) rotate(560deg)}}
+.wrap{position:relative;z-index:2;width:min(420px,100%);text-align:center}
+.logo{width:120px;height:120px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35));animation:fl 4s ease-in-out infinite}@keyframes fl{50%{transform:translateY(-8px)}}
+h1{margin:12px 0 0;font-size:1.7rem;letter-spacing:.5px}.jp{color:#e8c77a;letter-spacing:3px;font-size:.8rem;margin-top:2px}
+p.s{opacity:.8;font-size:.9rem;margin:10px 0 22px}
+.role{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:18px;margin-bottom:12px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);backdrop-filter:blur(10px);color:#fff;text-decoration:none;transition:transform .15s,background .15s}
+.role:hover,.role:active{transform:translateY(-2px);background:rgba(255,255,255,.18)}
+.role .ic{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0}
+.role.st .ic{background:linear-gradient(135deg,#e74c3c,#c0392b)}.role.te .ic{background:linear-gradient(135deg,#16a085,#0e7c66)}
+.role b{display:block;font-size:1.1rem}.role small{opacity:.8;font-size:.8rem}.role .ar{margin-left:auto;font-size:1.3rem;opacity:.7}
+.foot{margin-top:18px;font-size:.75rem;opacity:.7}.foot a{color:#e8c77a}
+.inst{margin-top:10px;background:#c9a24a;color:#0f2544;border:0;border-radius:30px;padding:10px 18px;font-weight:800;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="sun"></div>
+<i class="petal" style="left:10%"></i><i class="petal" style="left:30%;animation-delay:-3s"></i><i class="petal" style="left:55%;animation-delay:-6s"></i><i class="petal" style="left:75%;animation-delay:-2s"></i><i class="petal" style="left:90%;animation-delay:-8s"></i>
+<div class="wrap">
+  <img class="logo" src="../logomark.png" alt="Galaxy International Academy" onerror="this.src='icon-192.png'">
+  <h1>GIA App</h1>
+  <div class="jp">銀河国際アカデミー</div>
+  <p class="s" id="sub">Galaxy International Academy — choose how you log in</p>
+  <a class="role st" href="student.html"><span class="ic">🎓</span><span><b id="rs">I'm a Student</b><small id="rs2">Student ID + phone number · fees, attendance, selfie check-in</small></span><span class="ar">›</span></a>
+  <a class="role te" href="teacher.html"><span class="ic">👩‍🏫</span><span><b id="rt">I'm a Teacher</b><small id="rt2">Email + password · approve attendance batch-wise</small></span><span class="ar">›</span></a>
+  <button class="inst" id="inst" hidden>📲 Install GIA App</button>
+  <div class="foot"><a href="#" id="lang">বাংলা</a> · <a href="../">giabd.com</a> · <a href="../office/">Office</a></div>
+</div>
+<script>
+var BN={sub:"গ্যালাক্সি ইন্টারন্যাশনাল একাডেমি — কীভাবে লগইন করবেন বেছে নিন",rs:"আমি শিক্ষার্থী",rs2:"স্টুডেন্ট আইডি + ফোন নম্বর · ফি, উপস্থিতি, সেলফি চেক-ইন",rt:"আমি শিক্ষক",rt2:"ইমেইল + পাসওয়ার্ড · ব্যাচ অনুযায়ী উপস্থিতি অনুমোদন"},EN={};
+Object.keys(BN).forEach(function(k){EN[k]=document.getElementById(k).textContent;});
+function setL(l){var D=l==="bn"?BN:EN;Object.keys(D).forEach(function(k){document.getElementById(k).textContent=D[k];});document.getElementById("lang").textContent=l==="bn"?"English":"বাংলা";try{localStorage.setItem("gia_stu_lang",l);localStorage.setItem("gia_t_lang",l);}catch(e){}}
+var cur="en";try{cur=localStorage.getItem("gia_stu_lang")||"en";}catch(e){}setL(cur);
+document.getElementById("lang").onclick=function(e){e.preventDefault();cur=cur==="bn"?"en":"bn";setL(cur);};
+var dp=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();dp=e;document.getElementById("inst").hidden=false;});
+document.getElementById("inst").onclick=function(){if(dp){dp.prompt();dp=null;this.hidden=true;}};
+try{if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js");}catch(e){}
+</script>
+</body>
+</html>
