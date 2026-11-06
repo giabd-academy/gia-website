@@ -1,0 +1,27 @@
+/office/*
+  X-Robots-Tag: noindex, nofollow
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Cache-Control: no-cache
+
+/app/*
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Cache-Control: no-cache
+  Permissions-Policy: camera=(self), geolocation=(self)
+/student/*
+  X-Robots-Tag: noindex
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(self), geolocation=(self)
+  Referrer-Policy: no-referrer
+  Cache-Control: no-cache
+/verify/*
+  X-Robots-Tag: noindex
+  Cache-Control: no-cache
+/teacher/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/*/sw.js
+  Cache-Control: no-cache
+/*.webmanifest
+  Content-Type: application/manifest+json
